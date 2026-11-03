@@ -189,17 +189,21 @@ nav button.on{color:var(--accent)}
     <section class="view" id="v-set">
       <div class="top"><div><span class="d">设置</span></div></div>
 
-      <label class="lb">AI 接口（写整理、总结、洞察要用）</label>
+      <label class="lb">AI 接口（整理、总结、说给你听、回顾要用）</label>
       <p class="hint" style="margin:0 0 12px">
-        不填也能记日记，只是要你自己动手整理。<br>
+        前四个都有免费额度，随便挑一个。不填也能记日记，只是得自己动手整理。<br>
         密钥只存在这台手机里，不上传，也不在代码里。
       </p>
       <select id="preset">
         <option value="">选一个服务商……</option>
-        <option value="siliconflow_free">硅基流动 · 免费模型（推荐）</option>
+        <option value="modelscope">魔搭 ModelScope（免费，每天有额度）</option>
+        <option value="siliconflow_free">硅基流动 · 免费模型</option>
+        <option value="hunyuan">腾讯混元 · lite（免费）</option>
+        <option value="dashscope">阿里百炼 · 通义（新用户免费额度）</option>
         <option value="openrouter_free">OpenRouter · 免费模型</option>
         <option value="deepseek">DeepSeek（便宜，几块钱用很久）</option>
         <option value="moonshot">Moonshot / Kimi</option>
+        <option value="ark">火山方舟 · 豆包（要填接入点 ID）</option>
         <option value="zhipu">智谱 GLM（网页连不上，别选）</option>
         <option value="custom">自定义</option>
       </select>
@@ -681,6 +685,14 @@ $('btn-rv-prompt').onclick=function(){
 
 /* ---------- 设置 ---------- */
 var PRESETS={
+  modelscope:{base:'https://api-inference.modelscope.cn/v1',model:'Qwen/Qwen2.5-7B-Instruct',
+    tip:'免费，手机能直连。modelscope.cn 用阿里云账号登录 → 右上头像「访问令牌」→ 新建，粘到下面。每天有免费调用额度，够写日记用。额度以控制台为准。'},
+  hunyuan:{base:'https://api.hunyuan.cloud.tencent.com/v1',model:'hunyuan-lite',
+    tip:'hunyuan-lite 是免费档（有限速）。腾讯云控制台 → 混元大模型 → 开通 → 创建 API Key，粘到下面。模型名保持 hunyuan-lite 不要改。'},
+  dashscope:{base:'https://dashscope.aliyuncs.com/compatible-mode/v1',model:'qwen-turbo',
+    tip:'新用户每个模型有免费额度，够用很久。bailian.console.aliyun.com 登录 → 开通 → API-KEY 页面创建。模型名可换 qwen-plus（贵一点、更准）。'},
+  ark:{base:'https://ark.cn-beijing.volces.com/api/v3',model:'',
+    tip:'火山引擎 → 方舟 → 开通豆包模型 → 创建「推理接入点」，把那串 ep- 开头的 ID 填到「模型名」里。不填接入点会报错，这一步不能省。'},
   siliconflow_free:{base:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2.5-7B-Instruct',
     tip:'免费，手机能直连。siliconflow.cn 注册 → 左侧「API 密钥」新建。注意：新账户送的代金券不算余额，现金为 0 会被拦（报 402 没余额），需要实名认证 + 充 0.01 元解锁，之后免费模型零扣费。'},
   openrouter_free:{base:'https://openrouter.ai/api/v1',model:'deepseek/deepseek-r1:free',
