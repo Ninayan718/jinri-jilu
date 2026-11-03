@@ -75,6 +75,20 @@ nav button.on{color:var(--accent)}
   max-width:82vw; text-align:center}
 #toast.on{opacity:1}
 .status{font-size:12.5px; color:var(--warn); padding:8px 0 0; line-height:1.7}
+.seg{display:flex; gap:8px; margin:6px 0 2px}
+.seg button{flex:1; border:1px solid var(--line); background:var(--card); color:var(--sub);
+  border-radius:9px; padding:9px 0; font-size:13.5px; font-family:inherit}
+.seg button.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent); font-weight:500}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0}
+.stat{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 8px; text-align:center}
+.stat b{display:block; font-size:21px; font-weight:600; letter-spacing:.3px; line-height:1.3}
+.stat span{font-size:11.5px; color:var(--sub)}
+.chips{display:flex; flex-wrap:wrap; gap:7px}
+.chip{background:var(--accent-soft); color:var(--accent); border-radius:20px; padding:4px 11px; font-size:13px}
+.chip i{font-style:normal; opacity:.55; font-size:11.5px; margin-left:4px}
+.same{font-size:14px; color:var(--sub); line-height:1.75}
+.same b{color:var(--ink); font-weight:600; font-size:13px; display:block; margin-bottom:3px}
+.same+.same{margin-top:12px; padding-top:12px; border-top:1px solid var(--line)}
 .spin{display:inline-block; animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 </style>
@@ -135,6 +149,43 @@ nav button.on{color:var(--accent)}
       <div id="list"></div>
     </section>
 
+    <section class="view" id="v-review">
+      <div class="top"><div><span class="d">回顾</span><span class="w" id="rv-sub"></span></div></div>
+
+      <div class="seg" id="rv-seg">
+        <button data-r="7" class="on">近 7 天</button>
+        <button data-r="30">近 30 天</button>
+        <button data-r="all">全部</button>
+      </div>
+
+      <div class="stats" id="rv-stats"></div>
+
+      <div class="card" id="rv-words-card" style="display:none">
+        <h3>反复出现的词</h3>
+        <div class="chips" id="rv-words"></div>
+      </div>
+
+      <div class="card" id="rv-same-card" style="display:none">
+        <h3>往期今天</h3>
+        <div id="rv-same"></div>
+      </div>
+
+      <button class="btn" id="btn-review">让 AI 读一遍</button>
+      <div class="status" id="rv-status"></div>
+
+      <div class="card" id="rv-ai-card" style="display:none">
+        <h3>读完之后<button class="mini" id="btn-copy-review">复制</button></h3>
+        <div class="body" id="rv-ai"></div>
+      </div>
+
+      <div class="row2">
+        <button class="mini" id="btn-rv-prompt" style="flex:1">复制提示词（不填接口也能用）</button>
+      </div>
+      <div class="hint">
+        回顾不是数数，是把这几天的日记放在一起看线：主线在哪、什么在反复、有没有变。
+      </div>
+    </section>
+
     <section class="view" id="v-set">
       <div class="top"><div><span class="d">设置</span></div></div>
 
@@ -187,13 +238,14 @@ nav button.on{color:var(--accent)}
   <nav>
     <button data-v="write" class="on"><i>✎</i>写日记</button>
     <button data-v="list"><i>▤</i>日记本</button>
+    <button data-v="review"><i>◎</i>回顾</button>
     <button data-v="set"><i>⚙</i>设置</button>
   </nav>
 </div>
 <div id="toast"></div>
 <script>
 var KEY='diary.v1';
-var store={entries:[],cfg:{base:'',model:'',key:''},voice:''};
+var store={entries:[],cfg:{base:'',model:'',key:''},voice:'',reviews:{}};
 var cur=null;
 
 function $(id){return document.getElementById(id);}
@@ -210,6 +262,7 @@ function load(){
     if(s.entries)store.entries=s.entries;
     if(s.cfg)store.cfg=s.cfg;
     if(s.voice)store.voice=s.voice;
+    if(s.reviews)store.reviews=s.reviews;
   }catch(e){}
 }
 function persist(){localStorage.setItem(KEY,JSON.stringify(store));}
@@ -231,6 +284,7 @@ document.querySelectorAll('nav button').forEach(function(b){
     var v=b.getAttribute('data-v');
     if(v==='list')renderList();
     if(v==='write')loadToday();
+    if(v==='review')renderReview();
     show(v);
   };
 });
@@ -472,6 +526,156 @@ $('btn-copyprompt').onclick=function(){
     +'2. 今天：用 ①②③④⑤ 五条总结——① 发生了什么/心情状态 ② 灵感与想法 ③ 积极的愿望 ④ 要感谢的事 ⑤ 未完成待办。没有的写「无」。\n'
     +'3. 说给你听：像心理顾问那样，指出你看到的一个具体模式，给一到两个能立刻做的建议，结尾说句真心话，三百到五百字。\n\n'
     +'日记：\n'+cur.raw;
+  copyStr(p).then(function(){toast('已复制，去粘给 WorkBuddy');},function(){toast('复制失败');});
+};
+
+/* ---------- 回顾 ---------- */
+var rvRange='7';
+var EMO=['开心','高兴','踏实','轻松','平静','成就感','感谢','期待','满足','累','烦','慌','焦虑','难过','委屈','生气','紧张','孤独','失望'];
+var TOPIC=['老公','儿子','孩子','妈妈','伯母','朋友','同事','客户','公司','图书馆','医院','学校','万达','开会','工作','方案','工具','手机','日记','照片','吃饭','睡觉','散步','看书','运动','短剧','小红书','抖音','写作','房贷','加班'];
+
+function dayShift(id,days){
+  var d=new Date(id+'T00:00:00');d.setDate(d.getDate()+days);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function sortedDesc(){return store.entries.slice().sort(function(a,b){return a.id<b.id?1:-1;});}
+function inRange(n){
+  var all=sortedDesc();
+  if(n==='all')return all;
+  var from=dayShift(todayId(),-(parseInt(n,10)-1));
+  return all.filter(function(e){return e.id>=from;});
+}
+function streakDays(){
+  var ids={};store.entries.forEach(function(e){ids[e.id]=1;});
+  var cur=todayId(),n=0;
+  if(!ids[cur])cur=dayShift(cur,-1);
+  while(ids[cur]&&n<4000){n++;cur=dayShift(cur,-1);}
+  return n;
+}
+function rvSig(list){
+  return list.map(function(e){return e.id+':'+(e.upd||0);}).join(',');
+}
+function wordCounts(list){
+  var txt=list.map(function(e){return (e.tidy||'')+'\n'+e.raw;}).join('\n').toLowerCase();
+  var out=[];
+  EMO.concat(TOPIC).forEach(function(w){
+    var c=txt.split(w.toLowerCase()).length-1;
+    if(c>0)out.push({w:w,c:c});
+  });
+  out.sort(function(a,b){return b.c-a.c||b.w.length-a.w.length;});
+  return out;
+}
+
+function renderReview(){
+  var segs=document.querySelectorAll('#rv-seg button');
+  for(var i=0;i<segs.length;i++){
+    segs[i].className=(segs[i].getAttribute('data-r')===rvRange)?'on':'';
+  }
+  var list=inRange(rvRange);
+  var st=$('rv-stats');
+
+  if(!list.length){
+    st.innerHTML='<div class="empty" style="grid-column:1/-1;padding:30px 6px">这段时间还没有日记。</div>';
+    $('rv-sub').textContent='';
+  }else{
+    var chars=0;
+    list.forEach(function(e){chars+=e.raw.length;});
+    st.innerHTML=
+      '<div class="stat"><b>'+list.length+'</b><span>篇</span></div>'+
+      '<div class="stat"><b>'+streakDays()+'</b><span>连续记录 · 天</span></div>'+
+      '<div class="stat"><b>'+Math.round(chars/list.length)+'</b><span>平均字数</span></div>';
+    $('rv-sub').textContent=(rvRange==='all'?'全部':rvRange+' 天')+' · '+chars+' 字';
+  }
+
+  /* 反复出现的词 */
+  var ws=wordCounts(list).filter(function(x){return x.c>=2;}).slice(0,12);
+  $('rv-words-card').style.display=(list.length&&ws.length)?'':'none';
+  $('rv-words').innerHTML='';
+  ws.forEach(function(x){
+    var s=document.createElement('span');s.className='chip';
+    s.textContent=x.w;
+    var i2=document.createElement('i');i2.textContent=x.c;s.appendChild(i2);
+    $('rv-words').appendChild(s);
+  });
+
+  /* 往期今天 */
+  var box=$('rv-same');
+  box.innerHTML='';
+  var hit=0;
+  [['一周前',7],['一个月前',30],['半年前',180],['一年前',365]].forEach(function(p){
+    var e=find(dayShift(todayId(),-p[1]));
+    if(!e)return;
+    hit++;
+    var d=document.createElement('div');d.className='same';
+    var b=document.createElement('b');b.textContent=p[0]+'　'+e.id;
+    d.appendChild(b);
+    d.appendChild(document.createTextNode(e.raw.slice(0,66)+(e.raw.length>66?'…':'')));
+    d.onclick=function(){openNote(e.id);};
+    box.appendChild(d);
+  });
+  $('rv-same-card').style.display=hit?'':'none';
+
+  /* 已有的分析 */
+  var rec=store.reviews[rvRange];
+  if(rec&&rec.text){
+    $('rv-ai-card').style.display='';
+    $('rv-ai').textContent=rec.text;
+    $('rv-status').textContent=(rec.sig===rvSig(list))?'':'日记有更新，可以再读一遍。';
+  }else{
+    $('rv-ai-card').style.display='none';
+    $('rv-status').textContent='';
+  }
+}
+document.querySelectorAll('#rv-seg button').forEach(function(b){
+  b.onclick=function(){
+    rvRange=b.getAttribute('data-r');
+    $('rv-status').textContent='';
+    renderReview();
+  };
+});
+
+function rvBody(list){
+  return list.slice().reverse().map(function(e){
+    return '【'+e.id+'】\n'+(e.tidy||e.raw);
+  }).join('\n\n');
+}
+function rvInstruction(){
+  return '把这些日记放在一起看。不是逐篇复述，是看这段时间的线。\n\n'
+    +'严格按四段输出，用 ①②③④ 开头，不要小标题，不要开场白：\n'
+    +'① 这段时间的主线：心思主要落在哪。两三句，必须带上具体的事。\n'
+    +'② 反复出现的：同一件事或同一种情绪反反复复的，点名说清出现了几次、在哪几篇。\n'
+    +'③ 变化：跟更早的时候比，什么变了（语气、在意的事、对自己的判断）。看不出就如实写「看不出明显变化」。\n'
+    +'④ 一句真话：像她信任的长辈那样说一句，可以不好听，但要真。不要励志口号。\n\n'
+    +'规则：只依据给出的日记，不脑补；引用原话用「」短引；不写「继续保持」「相信你」这类话；三百到五百字。\n\n';
+}
+
+$('btn-review').onclick=async function(){
+  var list=inRange(rvRange);
+  if(!list.length){toast('这段时间还没有日记');return;}
+  var btn=this;
+  btn.disabled=true;
+  $('rv-status').textContent='正在读…';
+  try{
+    var txt=await chat(rvInstruction()+'这是我的日记：\n\n'+rvBody(list));
+    store.reviews[rvRange]={text:txt,ts:Date.now(),sig:rvSig(list)};
+    persist();
+    $('rv-ai-card').style.display='';
+    $('rv-ai').textContent=txt;
+    $('rv-status').textContent='';
+  }catch(e){
+    $('rv-status').textContent=explain(e);
+  }finally{btn.disabled=false;}
+};
+$('btn-copy-review').onclick=function(){
+  var rec=store.reviews[rvRange];
+  if(!rec||!rec.text){toast('还没有内容');return;}
+  copyStr(rec.text).then(function(){toast('已复制');},function(){toast('复制失败');});
+};
+$('btn-rv-prompt').onclick=function(){
+  var list=inRange(rvRange);
+  if(!list.length){toast('这段时间还没有日记');return;}
+  var p='这是我'+(rvRange==='all'?'全部':rvRange+' 天')+'的日记，一共 '+list.length+' 篇。帮我做一件事：\n\n'
+    +rvInstruction()+rvBody(list);
   copyStr(p).then(function(){toast('已复制，去粘给 WorkBuddy');},function(){toast('复制失败');});
 };
 
