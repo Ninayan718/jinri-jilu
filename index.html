@@ -601,7 +601,7 @@ document.getElementById('btn-polish').onclick=async function(){
 
 var PRESETS={
   siliconflow_free:{base:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2.5-7B-Instruct',
-    tip:'免费，手机网页能直连。siliconflow.cn 注册（手机号就行）→ 左侧「API 密钥」→ 新建，粘到下面。Qwen2.5-7B 不扣费，写短文够用。'},
+    tip:'免费，手机网页能直连。步骤：siliconflow.cn 注册 → 完成「实名认证」→ 「API 密钥」新建，粘到下面。⚠️ 常见坑：新账户送的是代金券≠余额，现金余额为 0 会被判定欠费、报「没余额」——去「充值」充 0.01 元解锁，之后免费模型永远不扣费。'},
   openrouter_free:{base:'https://openrouter.ai/api/v1',model:'deepseek/deepseek-r1:free',
     tip:'免费，手机网页能直连。openrouter.ai 注册 → Keys → Create Key。模型名带 :free 的不扣费。国外服务，需要能正常访问。'},
   zhipu:{base:'https://open.bigmodel.cn/api/paas/v4',model:'glm-4-flash',
@@ -663,7 +663,7 @@ document.getElementById('btn-test').onclick=async function(){
     }else if(/401|403|令牌|api key|invalid/i.test(m)){
       msg='服务商说密钥不对（'+m+'）。检查：① Key 是不是完整复制了，开头结尾别带空格；② Key 是不是这个服务商的——智谱的 Key 填到硅基流动里当然不行；③ 刚创建的 Key 有的要等几分钟才生效。';
     }else if(/402|余额|balance|insufficient/i.test(m)){
-      msg='服务商说没余额了（'+m+'）。免费模型不扣费，付费模型要先充值，或者换免费档。';
+      msg='服务商说没余额（'+m+'）。如果你用的是硅基流动且刚注册：它送的是代金券，不算余额——账户现金为 0 会被判定欠费，免费模型也会报这个错。去官网完成「实名认证」，再充 0.01 元解锁，之后免费模型不再扣费。不想充一分钱就换「OpenRouter · 免费模型」，或者走「复制提示词」那条路。';
     }else if(/429|频繁|rate/i.test(m)){
       msg='触发限速（'+m+'）。免费档限得紧，等几秒再点一次测试就行，不是坏了。';
     }else{
