@@ -527,28 +527,72 @@ $('btn-export').onclick=function(){
   toast('已导出');
 };
 $('btn-import').onclick=function(){$('file').click();};
+function doImport(obj){
+  if(!obj||!obj.entries||!obj.entries.length)throw new Error('bad');
+  var n=0;
+  obj.entries.forEach(function(e){
+    if(!e.id)return;
+    var old=find(e.id);
+    if(old){for(var k in e){old[k]=e[k];}}
+    else{store.entries.push(e);}
+    n++;
+  });
+  if(obj.voice&&!store.voice)store.voice=obj.voice;
+  persist();
+  return n;
+}
 $('file').onchange=function(){
   var f=this.files[0];if(!f)return;
   var rd=new FileReader();
   rd.onload=function(){
-    try{
-      var s=JSON.parse(rd.result);
-      if(!s.entries)throw new Error('格式不对');
-      var n=0;
-      s.entries.forEach(function(e){
-        var old=find(e.id);
-        if(old){Object.assign(old,e);}else{store.entries.push(e);}
-        n++;
-      });
-      if(s.voice&&!store.voice)store.voice=s.voice;
-      persist();renderList();toast('导入了 '+n+' 篇');
-    }catch(e){toast('导入失败：文件不对');}
+    try{var n=doImport(JSON.parse(rd.result));renderList();toast('导入了 '+n+' 篇');}
+    catch(e){toast('导入失败：文件不对');}
   };
   rd.readAsText(f);
 };
 
+/* 链接导入：…/#pull=2026-11-02  或  …/#import=<base64> */
+function importFromHash(){
+  var hsh=location.hash||'';
+  var p=hsh.match(/pull=([A-Za-z0-9_-]+)/);
+  if(p){
+    show('list');
+    fetch('imports/'+p[1]+'.json',{cache:'no-store'}).then(function(r){
+      if(!r.ok)throw new Error('404');
+      return r.json();
+    }).then(function(o){
+      var n=doImport(o);
+      history.replaceState(null,'',location.pathname);
+      renderList();
+      setTimeout(function(){toast('已导入 '+n+' 篇');},300);
+    }).catch(function(){
+      history.replaceState(null,'',location.pathname);
+      renderList();
+      toast('没找到要导入的内容，可能要等一会儿');
+    });
+    return true;
+  }
+  var m=hsh.match(/import=([^&]+)/);
+  if(!m)return false;
+  try{
+    var b=decodeURIComponent(m[1]).replace(/-/g,'+').replace(/_/g,'/');
+    while(b.length%4)b+='=';
+    var s=decodeURIComponent(escape(atob(b)));
+    var n=doImport(JSON.parse(s));
+    history.replaceState(null,'',location.pathname);
+    renderList();show('list');
+    setTimeout(function(){toast('已导入 '+n+' 篇');},300);
+    return true;
+  }catch(e){
+    history.replaceState(null,'',location.pathname);
+    toast('链接里的内容读不出来');
+    return false;
+  }
+}
+
 /* ---------- 启动 ---------- */
 load();fillCfg();loadToday();
+if(!importFromHash()){show('write');}
 </script>
 </body>
 </html>
