@@ -1,715 +1,554 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#F7F5F1">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="今日记录">
-<meta name="theme-color" content="#1F1E1C">
+<meta name="apple-mobile-web-app-title" content="日记">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="180x180" href="apple-touch-icon.png">
-<title>今日记录</title>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>日记</title>
 <style>
 :root{
-  --bg:#F6F5F2; --card:#FFFFFF; --line:#E4E1DB;
-  --tx:#1F1E1C; --tx2:#6E6B65; --tx3:#9C9890; --sel:#1F1E1C;
-  --okbg:#E1F5EE; --ok:#0F6E56; --warnbg:#FAEEDA; --warn:#854F0B;
+  --bg:#F7F5F1; --card:#FFFFFF; --ink:#23211E; --sub:#8A857D; --line:#E7E3DB;
+  --accent:#3E6650; --accent-soft:#EAF0EB; --warn:#A85B3C;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
 body{
-  margin:0; background:var(--bg); color:var(--tx);
+  background:var(--bg); color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
-  font-size:16px; line-height:1.6;
-  padding:0 0 calc(70px + env(safe-area-inset-bottom)) 0;
+  font-size:16px; line-height:1.75; -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:640px;margin:0 auto;padding:0 16px}
-header{padding:calc(20px + env(safe-area-inset-top)) 0 12px}
-h1{font-size:19px;font-weight:600;margin:0 0 2px}
-.sub{font-size:12.5px;color:var(--tx3);margin:0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
-label.lb{display:block;font-size:13px;color:var(--tx2);margin:0 0 8px;font-weight:500}
-input[type=date],input[type=text],input[type=password],textarea,select{
-  width:100%;font:inherit;color:var(--tx);background:#FCFCFB;
-  border:1px solid var(--line);border-radius:10px;padding:11px;outline:none;
-}
-textarea{min-height:38vh;resize:vertical;line-height:1.75;background:#FCFCFB}
-textarea:focus,input:focus{border-color:#C9C5BD;background:#fff}
-.hint{font-size:12px;color:var(--tx3);margin:8px 0 0}
-button.act{
-  width:100%;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:600;
-  background:var(--sel);color:#fff;cursor:pointer;margin-bottom:10px;
-}
-button.act:active{opacity:.82}
-button.act.ghost{background:#fff;color:var(--tx);border:1px solid var(--line);font-weight:500;font-size:15px;padding:13px}
-button.mini{border:1px solid var(--line);background:#fff;color:var(--tx);border-radius:8px;padding:6px 11px;font-size:13px;cursor:pointer}
-button.mini.del{color:#A32D2D;border-color:#F0D5D5}
-.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
-.kv:first-of-type{border-top:none}
-.kv span:first-child{color:var(--tx2);flex:none}
-.kv span:last-child{text-align:right}
-.tagline{font-size:13px;color:var(--tx2);margin:10px 0 4px}
-.box{background:#FCFCFB;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:14px;white-space:pre-wrap;word-break:break-word;max-height:46vh;overflow:auto}
-.badge{display:inline-block;background:var(--okbg);color:var(--ok);border-radius:6px;padding:2px 8px;font-size:12px;margin-left:6px}
-.badge.w{background:var(--warnbg);color:var(--warn)}
-nav{
-  position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);
-  border-top:1px solid var(--line);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));
-  backdrop-filter:saturate(180%) blur(12px);
-}
-nav button{
-  flex:1;border:none;background:none;font:inherit;font-size:12.5px;color:var(--tx3);
-  padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
-}
-nav button.on{color:var(--tx)}
-nav .dot{width:16px;height:3px;border-radius:2px;background:transparent}
-nav button.on .dot{background:var(--tx)}
-.page{display:none}
-.page.on{display:block}
-.day{border-top:1px solid var(--line);padding:11px 0}
-.day:first-child{border-top:none}
-.day .d{font-size:13px;color:var(--tx2);display:flex;justify-content:space-between;align-items:center;gap:8px}
-.day .p{margin:5px 0 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
-.day .m{font-size:12px;color:var(--tx3);margin-top:5px}
-.empty{font-size:14px;color:var(--tx3);text-align:center;padding:20px 0}
-.toast{
-  position:fixed;left:50%;transform:translateX(-50%);
-  bottom:calc(84px + env(safe-area-inset-bottom));
-  background:var(--sel);color:#fff;padding:11px 17px;border-radius:12px;
-  font-size:14px;opacity:0;pointer-events:none;transition:opacity .22s;z-index:9;max-width:86vw;text-align:center;
-}
-.toast.show{opacity:1}
-.row2{display:flex;gap:8px}
-.row2>*{flex:1}
+.app{display:flex; flex-direction:column; height:100dvh; max-width:640px; margin:0 auto}
+main{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 18px 24px}
+.view{display:none}
+.view.on{display:block}
+.top{display:flex; align-items:baseline; justify-content:space-between; padding:22px 0 14px}
+.d{font-size:19px; font-weight:600; letter-spacing:.2px}
+.w{font-size:13px; color:var(--sub); margin-left:8px; font-weight:400}
+.back{border:0; background:none; color:var(--accent); font-size:15px; padding:0; margin:0; font-family:inherit}
+textarea{width:100%; min-height:44vh; border:0; background:transparent; font-family:inherit;
+  font-size:16.5px; line-height:1.85; color:var(--ink); resize:none; outline:none; padding:6px 0}
+textarea::placeholder{color:#BDB7AC}
+.btn{width:100%; border:0; border-radius:12px; padding:15px; font-family:inherit;
+  font-size:16px; font-weight:500; background:var(--accent); color:#fff; margin-top:14px}
+.btn:active{opacity:.82}
+.btn.ghost{background:var(--card); color:var(--ink); border:1px solid var(--line)}
+.btn:disabled{opacity:.45}
+.row2{display:flex; gap:10px; margin-top:12px}
+.row2 .btn{margin-top:0; flex:1}
+.mini{border:1px solid var(--line); background:var(--card); color:var(--ink);
+  border-radius:9px; padding:7px 13px; font-size:13.5px; font-family:inherit}
+.mini:active{background:var(--accent-soft)}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin:14px 0}
+.card h3{margin:0 0 10px; font-size:13px; font-weight:600; color:var(--sub);
+  letter-spacing:.06em; display:flex; align-items:center; justify-content:space-between}
+.body{white-space:pre-wrap; word-break:break-word; font-size:15.5px}
+.body.muted{color:var(--sub)}
+.item{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px}
+.item:active{background:#FCFBF8}
+.item .h{display:flex; align-items:baseline}
+.item .dt{font-size:15px; font-weight:600}
+.item .tags{font-size:12px; color:var(--accent); margin-left:auto}
+.item .pv{color:var(--sub); font-size:14px; margin-top:6px; display:-webkit-box;
+  -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.empty{color:var(--sub); text-align:center; padding:60px 20px; font-size:14.5px; line-height:2}
+label.lb{display:block; font-size:13px; color:var(--sub); margin:18px 0 6px}
+input,select{width:100%; border:1px solid var(--line); border-radius:10px; padding:12px 13px;
+  font-family:inherit; font-size:15px; background:var(--card); color:var(--ink); outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+.hint{font-size:12.5px; color:var(--sub); line-height:1.8; margin:8px 0 0}
+nav{display:flex; border-top:1px solid var(--line); background:rgba(255,255,255,.94);
+  backdrop-filter:blur(12px); padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1; border:0; background:none; font-family:inherit; padding:11px 0 13px;
+  font-size:12px; color:var(--sub); display:flex; flex-direction:column; align-items:center; gap:3px}
+nav button i{font-style:normal; font-size:19px; line-height:1}
+nav button.on{color:var(--accent)}
+#toast{position:fixed; left:50%; bottom:96px; transform:translateX(-50%);
+  background:rgba(35,33,30,.9); color:#fff; font-size:14px; padding:10px 18px;
+  border-radius:20px; opacity:0; pointer-events:none; transition:opacity .22s; z-index:99;
+  max-width:82vw; text-align:center}
+#toast.on{opacity:1}
+.status{font-size:12.5px; color:var(--warn); padding:8px 0 0; line-height:1.7}
+.spin{display:inline-block; animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
+<div class="app">
+  <main>
 
-<div class="wrap">
-  <header>
-    <h1>今日记录</h1>
-    <p class="sub" id="subline">想到啥写啥，写完点分析</p>
-  </header>
-
-  <!-- 今日 -->
-  <div class="page on" id="pg-today">
-    <div class="card">
-      <label class="lb" for="date">日期</label>
-      <input type="date" id="date">
-    </div>
-
-    <div class="card">
-      <label class="lb" for="body">今天做了啥</label>
-      <textarea id="body" placeholder="上午跟王总开会，方案被否了&#10;下午重写，改到第三版才过&#10;晚上吃了碗面，回来又改了两个小时&#10;烦死了&#10;&#10;不用整理，不用打标点，错别字也留着"></textarea>
-      <p class="hint">用输入法的麦克风直接说，说完不用改。</p>
-    </div>
-
-    <button class="act" id="btn-analyze">分析</button>
-
-    <div class="card" id="resultCard" style="display:none">
-      <label class="lb">我的分析</label>
-      <div id="tags"></div>
-      <p class="tagline">主线</p>
-      <div class="box" id="mainline"></div>
-      <p class="tagline">打算略过</p>
-      <div class="box" id="skipped" style="min-height:44px"></div>
-      <div class="row2" style="margin-top:12px">
-        <button class="mini" id="btn-fix">改标签</button>
-        <button class="mini" id="btn-copyAnalysis">复制分析</button>
+    <section class="view on" id="v-write">
+      <div class="top">
+        <div><span class="d" id="d-today">今天</span><span class="w" id="w-today"></span></div>
+        <span class="w" id="saved-tip"></span>
       </div>
-    </div>
+      <textarea id="raw" placeholder="今天……"></textarea>
+      <button class="btn" id="btn-save">保存</button>
+      <div class="hint">想到什么写什么，不用整理，错别字也不用改。写完保存，可以去下面「日记本」里让她整理。</div>
+    </section>
 
-    <button class="act" id="btn-write" style="display:none">写文章</button>
-
-    <div class="card" id="articleCard" style="display:none">
-      <label class="lb">文章 <span id="artMode"></span></label>
-      <div class="box" id="article" style="min-height:180px"></div>
-      <div class="row2" style="margin-top:12px">
-        <button class="mini" id="btn-copyArticle">复制</button>
-        <button class="mini" id="btn-rewrite">重写一版</button>
+    <section class="view" id="v-note">
+      <div class="top">
+        <button class="back" id="btn-back">‹ 日记本</button>
+        <span class="w" id="note-date"></span>
       </div>
-      <div style="margin-top:8px"><button class="mini" id="btn-promptArt" style="width:100%">复制提示词，让 AI 帮我写</button></div>
-      <p class="hint" style="margin:8px 0 0">没填接口也能用这条：复制完粘给 WorkBuddy 或者任何 AI，他们照着写。</p>
-    </div>
-  </div>
+      <div class="card">
+        <h3>日记原文<button class="mini" id="btn-edit">编辑</button></h3>
+        <div class="body" id="note-raw"></div>
+      </div>
+      <div class="row2">
+        <button class="btn ghost" id="btn-tidy">整理</button>
+        <button class="btn ghost" id="btn-sum">总结</button>
+        <button class="btn ghost" id="btn-insight">看看我</button>
+      </div>
+      <div class="hint" id="note-hint">整理＝把你写的理顺分段，不改你的话；总结＝五条；看看我＝像心理咨询师那样给你一段分析。</div>
+      <div class="status" id="note-status"></div>
+      <div class="card" id="c-tidy" style="display:none">
+        <h3>整理后的日记<button class="mini" id="btn-copy-tidy">复制</button></h3>
+        <div class="body" id="b-tidy"></div>
+      </div>
+      <div class="card" id="c-sum" style="display:none">
+        <h3>今天<button class="mini" id="btn-copy-sum">复制</button></h3>
+        <div class="body" id="b-sum"></div>
+      </div>
+      <div class="card" id="c-insight" style="display:none">
+        <h3>说给你听<button class="mini" id="btn-copy-insight">复制</button></h3>
+        <div class="body" id="b-insight"></div>
+      </div>
+      <div class="row2" style="margin-top:18px">
+        <button class="mini" id="btn-copymd" style="flex:1">复制 Markdown</button>
+        <button class="mini" id="btn-copyprompt" style="flex:1">复制提示词</button>
+      </div>
+      <div class="row2">
+        <button class="mini" id="btn-del" style="flex:1;color:#A85B3C">删除这篇</button>
+      </div>
+    </section>
 
-  <!-- 历史 -->
-  <div class="page" id="pg-hist">
-    <div class="card">
-      <label class="lb">存过的</label>
+    <section class="view" id="v-list">
+      <div class="top"><div><span class="d">日记本</span><span class="w" id="count"></span></div></div>
       <div id="list"></div>
-    </div>
-    <div class="card">
-      <label class="lb">备份</label>
-      <p class="hint" style="margin:0 0 10px">数据只存在这台手机上。换手机或清缓存前导出一份。</p>
-      <div class="row2">
-        <button class="mini" id="btn-export">导出备份</button>
-        <button class="mini" id="btn-import">导入备份</button>
-      </div>
-      <input type="file" id="fileInput" accept=".json,application/json" style="display:none">
-    </div>
-  </div>
+    </section>
 
-  <!-- 复盘 -->
-  <div class="page" id="pg-review">
-    <div class="card">
-      <label class="lb">复盘</label>
-      <div class="row2">
-        <button class="mini" id="btn-week">本周</button>
-        <button class="mini" id="btn-month">本月</button>
-      </div>
-      <div style="margin-top:10px">
-        <button class="mini" id="btn-polish" style="width:100%">让 AI 把结论写狠一点</button>
-      </div>
-    </div>
-    <div class="card" id="reviewCard" style="display:none">
-      <label class="lb">结果</label>
-      <div class="box" id="review" style="min-height:200px;max-height:60vh"></div>
-      <div style="margin-top:12px"><button class="mini" id="btn-copyReview" style="width:100%">复制</button></div>
-      <div style="margin-top:8px"><button class="mini" id="btn-promptReview" style="width:100%">复制提示词，让 AI 把结论写狠一点</button></div>
-    </div>
-  </div>
+    <section class="view" id="v-set">
+      <div class="top"><div><span class="d">设置</span></div></div>
 
-  <!-- 设置 -->
-  <div class="page" id="pg-set">
-    <div class="card">
-      <label class="lb">AI 接口（可填可不填）</label>
-      <p class="hint" style="margin:0 0 10px">
-        <b>分析和复盘是本地算的，一分钱不用花。</b><br>
-        只有「自动写文章」需要 AI，两条路：<br>
-        <b>①</b> 下面填一个免费接口（推荐硅基流动）<br>
-        <b>②</b> 什么都不填，去文章页点「复制提示词」，粘给 WorkBuddy 让他写<br>
-        密钥只存在这台手机里，不会上传。
+      <label class="lb">AI 接口（写整理、总结、洞察要用）</label>
+      <p class="hint" style="margin:0 0 12px">
+        不填也能记日记，只是要你自己动手整理。<br>
+        密钥只存在这台手机里，不上传，也不在代码里。
       </p>
-      <select id="preset" style="margin-bottom:8px">
-        <option value="">选一个服务商…</option>
-        <option value="siliconflow_free">硅基流动 · 免费模型（免费，推荐）</option>
-        <option value="openrouter_free">OpenRouter · 免费模型（免费）</option>
-        <option value="zhipu">智谱 GLM-4-Flash（免费，但网页连不上）</option>
+      <select id="preset">
+        <option value="">选一个服务商……</option>
+        <option value="siliconflow_free">硅基流动 · 免费模型（推荐）</option>
+        <option value="openrouter_free">OpenRouter · 免费模型</option>
         <option value="deepseek">DeepSeek（便宜，几块钱用很久）</option>
-        <option value="siliconflow">硅基流动 · 付费模型</option>
         <option value="moonshot">Moonshot / Kimi</option>
-        <option value="openai">OpenAI</option>
+        <option value="zhipu">智谱 GLM（网页连不上，别选）</option>
         <option value="custom">自定义</option>
       </select>
-      <p class="hint" id="presetHint" style="display:none;margin:0 0 10px"></p>
-      <input type="text" id="base" placeholder="接口地址 https://api.deepseek.com/v1" style="margin-bottom:8px">
-      <input type="text" id="model" placeholder="模型名 deepseek-chat" style="margin-bottom:8px">
-      <input type="password" id="key" placeholder="API Key">
-      <div style="margin-top:12px"><button class="mini" id="btn-test" style="width:100%">测试连接</button></div>
-    </div>
+      <p class="hint" id="presetHint" style="display:none"></p>
 
-    <div class="card">
-      <label class="lb">项目关键词</label>
-      <p class="hint" style="margin:0 0 10px">
-        我靠关键词判断一件事属于哪个项目。一行一条，格式：<br>
-        <code>项目名 = 关键词1, 关键词2</code>
+      <label class="lb">接口地址</label>
+      <input id="base" placeholder="https://api.siliconflow.cn/v1" autocapitalize="off" autocorrect="off">
+
+      <label class="lb">模型名</label>
+      <input id="model" placeholder="Qwen/Qwen2.5-7B-Instruct" autocapitalize="off" autocorrect="off">
+
+      <label class="lb">API Key</label>
+      <input id="key" type="password" placeholder="sk-..." autocapitalize="off" autocorrect="off">
+
+      <button class="btn ghost" id="btn-test">测试连接</button>
+      <button class="btn" id="btn-savecfg">保存设置</button>
+      <p class="hint" id="testHint"></p>
+
+      <label class="lb" style="margin-top:34px">我的写作习惯（会一起发给 AI）</label>
+      <p class="hint" style="margin:0 0 8px">写几行你平时说话的样子，整理出来才像你。</p>
+      <textarea id="voice" style="min-height:110px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--card);font-size:15px"></textarea>
+
+      <label class="lb" style="margin-top:30px">数据</label>
+      <div class="row2">
+        <button class="mini" id="btn-export" style="flex:1">导出备份</button>
+        <button class="mini" id="btn-import" style="flex:1">导入备份</button>
+      </div>
+      <input type="file" id="file" accept=".json" style="display:none">
+      <p class="hint" style="margin-top:12px">
+        日记只存在这台手机上。换手机或清缓存前记得导出一次。
       </p>
-      <textarea id="projects" style="min-height:110px"></textarea>
-    </div>
+    </section>
 
-    <div class="card">
-      <label class="lb">风格档案</label>
-      <p class="hint" style="margin:0 0 10px">
-        写文章时会一起发给 AI。每次发现"这句不像我"，就把规则加到这里。
-      </p>
-      <textarea id="style" style="min-height:200px"></textarea>
-    </div>
+  </main>
 
-    <div style="margin-bottom:20px"><button class="mini" id="btn-saveSet" style="width:100%">保存设置</button></div>
-  </div>
+  <nav>
+    <button data-v="write" class="on"><i>✎</i>写日记</button>
+    <button data-v="list"><i>▤</i>日记本</button>
+    <button data-v="set"><i>⚙</i>设置</button>
+  </nav>
 </div>
-
-<nav>
-  <button class="on" data-p="today">今日<span class="dot"></span></button>
-  <button data-p="hist">历史<span class="dot"></span></button>
-  <button data-p="review">复盘<span class="dot"></span></button>
-  <button data-p="set">设置<span class="dot"></span></button>
-</nav>
-
-<div class="toast" id="toast"></div>
-
+<div id="toast"></div>
 <script>
-var KEY='wxlog.v3';
-var DEF_STYLE=[
-'句子偏短，能断就断',
-'允许句子不完整，允许"其实/反正/说白了/老实讲"这类口语插入',
-'段落长短不齐，允许单句成段',
-'具体数字、时间、人名地名一律保留',
-'不升华，不总结金句，不写"通过这件事我明白了"',
-'承认没做好、烦躁、走弯路，不粉饰',
-'先写事实，判断后置，能不写判断就不写',
-'标题像说话，不用"如何…""关于…的思考"'
-].join('\n');
+var KEY='diary.v1';
+var store={entries:[],cfg:{base:'',model:'',key:''},voice:''};
+var cur=null;
 
-var store=JSON.parse(localStorage.getItem(KEY)||'{}');
-if(!store.days)store.days={};
-if(!store.cfg)store.cfg={base:'',model:'',key:''};
-if(!store.projects)store.projects='';
-if(store.style===undefined)store.style=DEF_STYLE;
-function save(){localStorage.setItem(KEY,JSON.stringify(store));}
-
-var TYPE_MAP=[
-  ['开会',/开会|会议|例会|对齐|碰一下|评审|过会|站会/],
-  ['写方案',/方案|ppt|PPT|文档|改稿|初稿|提案|写稿|汇报材料/],
-  ['见客户',/客户|拜访|甲方|签约|面谈|对接/],
-  ['执行',/上线|发布|提交|处理|跟进|配置|部署|改完|做完了|搞定/],
-  ['学习',/看|学|读|课程|研究|调研|查资料|翻了/],
-  ['被打断',/打断|临时|插进来|救火|又来|叫过去/],
-  ['休息',/休息|摸鱼|吃饭|睡觉|散步|下班|回家/]
-];
-var NEG=/烦|烦死|累|崩|头疼|恶心|郁闷|气|糟|没劲|受不了|无语|摆烂/;
-var POS=/顺|搞定|不错|成了|过了|开心|还行|满意|搞定/;
-var TURN=/但是|结果|没想到|被否|推翻|改了|重新|又|反而|卡住|没过|白做/;
-var HOUR_RE=/(\d+(?:\.\d+)?)\s*(个)?\s*小时|(\d+(?:\.\d+)?)\s*h/i;
-
-function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2200);}
-function copyStr(s){
-  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(s);
-  return new Promise(function(res,rej){
-    var ta=document.createElement('textarea');ta.value=s;ta.style.position='fixed';ta.style.opacity='0';
-    document.body.appendChild(ta);ta.select();var ok=document.execCommand('copy');document.body.removeChild(ta);ok?res():rej();
-  });
+function $(id){return document.getElementById(id);}
+function toast(t){var e=$('toast');e.textContent=t;e.className='on';clearTimeout(e._t);e._t=setTimeout(function(){e.className='';},2200);}
+function pad(n){return n<10?'0'+n:''+n;}
+function todayId(){var d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function fmt(id){
+  var d=new Date(id+'T00:00:00');
+  var wk=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  return (d.getMonth()+1)+'月'+d.getDate()+'日 '+wk;
 }
-function todayStr(){var d=new Date(),m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0'+m:m)+'-'+(dd<10?'0'+dd:dd);}
-
-function sentences(t){
-  return t.split(/[\n。！？!?；;]+/).map(function(s){return s.trim();}).filter(function(s){return s.length>1;});
+function load(){
+  try{var s=JSON.parse(localStorage.getItem(KEY)||'{}');
+    if(s.entries)store.entries=s.entries;
+    if(s.cfg)store.cfg=s.cfg;
+    if(s.voice)store.voice=s.voice;
+  }catch(e){}
 }
+function persist(){localStorage.setItem(KEY,JSON.stringify(store));}
+function find(id){for(var i=0;i<store.entries.length;i++){if(store.entries[i].id===id)return store.entries[i];}return null;}
 
-function analyze(text){
-  var ss=sentences(text);
-  var types=[],hours=null,status='进行中',mood='平',proj='推断不出';
-
-  ss.forEach(function(s){
-    TYPE_MAP.forEach(function(p){if(p[1].test(s)&&types.indexOf(p[0])<0)types.push(p[0]);});
-  });
-  if(!types.length)types.push('推断不出');
-
-  var m=text.match(HOUR_RE);
-  if(m){
-    hours=(m[1]||m[3])+'h';
-  }else{
-    var seg=/上午|下午|晚上|一整天|整天|半天/.test(text);
-    if(seg){
-      var n=0;['上午','下午','晚上'].forEach(function(w){if(text.indexOf(w)>=0)n++;});
-      if(/一整天|整天/.test(text))hours='7h（估）';
-      else if(n>=2)hours='5h（估）';
-      else if(n===1)hours='3h（估）';
-    }
+/* ---------- 视图切换 ---------- */
+function show(v){
+  var vs=document.querySelectorAll('.view');
+  for(var i=0;i<vs.length;i++)vs[i].className='view';
+  $('v-'+v).className='view on';
+  var bs=document.querySelectorAll('nav button');
+  for(var j=0;j<bs.length;j++){
+    bs[j].className=(bs[j].getAttribute('data-v')===v)?'on':'';
   }
-  if(!hours)hours='推断不出';
-
-  if(/完成|做完|搞定|过了|交了|上线|发布|写完|改完|结束/.test(text))status='完成';
-  else if(/卡|没搞定|被否|阻塞|等着|推不动|做不下去|没过|白做/.test(text))status='卡住';
-
-  if(/崩|崩溃|烦死|受不了|摆烂|无语/.test(text))mood='崩';
-  else if(NEG.test(text))mood='烦';
-  else if(POS.test(text))mood='顺';
-
-  var pmap={};
-  store.projects.split('\n').forEach(function(line){
-    var mm=line.match(/^\s*(.+?)\s*[=＝:：]\s*(.+)$/);
-    if(mm)pmap[mm[1].trim()]=mm[2].split(/[,，、]/).map(function(x){return x.trim();}).filter(Boolean);
-  });
-  for(var name in pmap){
-    if(pmap[name].some(function(k){return k&&text.indexOf(k)>=0;})){proj=name;break;}
-  }
-
-  var best='',bestScore=-1,bestIdx=0;
-  ss.forEach(function(s,i){
-    var sc=0;
-    if(TURN.test(s))sc+=3;
-    if(NEG.test(s))sc+=2;
-    if(/\d/.test(s))sc+=1;
-    sc+=Math.min(s.length/40,2);
-    if(text.indexOf(s)===0)sc+=0.5;
-    if(sc>bestScore){bestScore=sc;best=s;bestIdx=i;}
-  });
-  var skipped=ss.filter(function(_,i){return i!==bestIdx;});
-
-  return {proj:proj,types:types,hours:hours,status:status,mood:mood,main:best||text.slice(0,60),skipped:skipped};
+  document.querySelector('main').scrollTop=0;
 }
-
-function renderResult(r){
-  var h='';
-  [['项目',r.proj],['类型',r.types.join('、')],['耗时',r.hours],['状态',r.status],['情绪',r.mood]].forEach(function(p){
-    var val=p[1];var b='';
-    if(String(val).indexOf('估')>=0)b='<span class="badge w">估</span>';
-    if(val==='推断不出')b='<span class="badge w">缺信息</span>';
-    h+='<div class="kv"><span>'+p[0]+'</span><span>'+val+b+'</span></div>';
-  });
-  document.getElementById('tags').innerHTML=h;
-  document.getElementById('mainline').textContent=r.main;
-  document.getElementById('skipped').textContent=r.skipped.length?r.skipped.join('\n'):'（没有别的了）';
-  document.getElementById('resultCard').style.display='';
-  document.getElementById('btn-write').style.display='';
-}
-
-var SYS_ARTICLE=[
-'你在替用户写公众号文章。用户给的是他自己的口语流水账，你要写成像他本人写的文章，不能像 AI。',
-'',
-'硬规则：',
-'1. 禁用词：首先、其次、再次、总之、综上所述、总而言之、值得注意的是、值得一提、在当今、随着……的发展、众所周知、赋能、闭环、抓手、打法、颗粒度、心智、底层逻辑、组合拳、让我们、我们一起、希望对你有帮助、不妨、由此可见、不难看出、至关重要、不可或缺、不仅仅是……更是……、不是……而是……',
-'2. 禁用结构：三段式排比；每段首句都是总结句；结尾升华金句；"通过这件事我明白了""这件事让我深刻认识到"这类总结；用小标题把文章均匀切成几块；开头宏大背景铺垫',
-'3. 禁用排版：标题堆 emoji；破折号成瘾；全文加粗超过 3 处；每条都编号像说明书',
-'4. 保留具体数字、具体时间、具体人名地名代号',
-'5. 允许句子不完整，允许"其实/反正/说白了/老实讲/结果/倒是"这类口语插入',
-'6. 段落长短不齐，允许单句成段',
-'7. 标题像说话，不用"如何……""关于……的思考""浅析……""……的 N 个方法"',
-'8. 承认没做好、烦躁、犹豫、走弯路，不要粉饰',
-'9. 先写事实，判断后置，能不写判断就不写。写完自己读一遍，哪句"顺得不像人话"就改掉',
-'',
-'用户风格档案：',
-'---',
-'{STYLE}',
-'---'
-].join('\n');
-
-async function chat(system,user){
-  var c=store.cfg;
-  if(!c.base||!c.key)throw new Error('还没填 AI 接口，去设置页填一下');
-  var url=c.base.replace(/\/+$/,'')+'/chat/completions';
-  var r=await fetch(url,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+c.key},
-    body:JSON.stringify({model:c.model||'deepseek-chat',temperature:0.85,
-      messages:[{role:'system',content:system},{role:'user',content:user}]})
-  });
-  if(!r.ok){
-    var t=await r.text();
-    throw new Error('HTTP '+r.status+' '+t.slice(0,160));
-  }
-  var j=await r.json();
-  if(!j.choices||!j.choices[0])throw new Error('返回格式不对：'+JSON.stringify(j).slice(0,160));
-  return j.choices[0].message.content.trim();
-}
-
-function buildReview(range){
-  var now=new Date();
-  var start;
-  if(range==='week'){
-    var d=new Date(now);var wd=(d.getDay()+6)%7;d.setDate(d.getDate()-wd);
-    start=d.toISOString().slice(0,10);
-  }else{
-    start=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
-  }
-  var ds=Object.keys(store.days).filter(function(d){return d>=start&&d<=todayStr();}).sort();
-  if(!ds.length)return '这段时间还没有记录。';
-
-  var typeCount={},hoursExact=0,hoursEst=0,projCount={},stuck=[],done=[],moodCount={};
-  ds.forEach(function(d){
-    var rec=store.days[d];
-    var a=rec.a||analyze(rec.text);
-    a.types.forEach(function(t){typeCount[t]=(typeCount[t]||0)+1;});
-    var hm=String(a.hours).match(/([\d.]+)/);
-    if(hm){
-      if(String(a.hours).indexOf('估')>=0)hoursEst+=parseFloat(hm[1]);else hoursExact+=parseFloat(hm[1]);
-    }
-    if(a.proj&&a.proj!=='推断不出')projCount[a.proj]=(projCount[a.proj]||0)+1;
-    moodCount[a.mood]=(moodCount[a.mood]||0)+1;
-    if(a.status==='卡住')stuck.push(d+'：'+a.main);
-    if(a.status==='完成')done.push(d+'：'+a.main);
-  });
-
-  var L=[];
-  L.push('# '+(range==='week'?'本周':'本月')+'复盘（'+start+' 至 '+todayStr()+'）');
-  L.push('');
-  L.push('记录天数：'+ds.length+' 天');
-  L.push('');
-  L.push('## 类型分布');
-  Object.keys(typeCount).sort(function(a,b){return typeCount[b]-typeCount[a];}).forEach(function(t){
-    L.push('- '+t+'：'+typeCount[t]+' 次');
-  });
-  L.push('');
-  L.push('## 耗时');
-  L.push('- 明确记录的：'+hoursExact+' 小时');
-  L.push('- 按语境估的：'+hoursEst+' 小时（估）');
-  if(!hoursExact&&!hoursEst)L.push('- 记录不足，无法统计');
-  L.push('');
-  L.push('## 项目');
-  if(Object.keys(projCount).length){
-    Object.keys(projCount).sort(function(a,b){return projCount[b]-projCount[a];}).forEach(function(p){
-      L.push('- '+p+'：'+projCount[p]+' 天');
-    });
-  }else{L.push('- 没匹配到项目（设置页加关键词）');}
-  L.push('');
-  L.push('## 完成的');
-  L.push(done.length?done.map(function(x){return '- '+x;}).join('\n'):'- 无');
-  L.push('');
-  L.push('## 卡住的');
-  L.push(stuck.length?stuck.map(function(x){return '- '+x;}).join('\n'):'- 无');
-  L.push('');
-  L.push('## 情绪');
-  Object.keys(moodCount).sort(function(a,b){return moodCount[b]-moodCount[a];}).forEach(function(m){
-    L.push('- '+m+'：'+moodCount[m]+' 天');
-  });
-  return L.join('\n');
-}
-
-var SYS_POLISH=[
-'你是一个很直接的个人管理顾问。下面是用户一段时间的原始统计，你要把它改写成一份有判断、有取舍动作的复盘。',
-'',
-'要求：',
-'1. 所有数字必须来自统计，没数据的写"记录不足，无法统计"，绝对不许编',
-'2. 判断下重手：某件事反复卡住就直接写"这件事该砍了"，不要写"建议持续关注"',
-'3. 不写"继续加油""保持节奏"这类空话',
-'4. 结尾给三条动作：砍掉一件事、加上一件事、一件必须收尾的事',
-'5. 语气像跟自己说话，不用汇报体，不用 markdown 标题堆砌',
-'6. 500 字以内'
-].join('\n');
-
-var cur=null,curDate=null;
-
 document.querySelectorAll('nav button').forEach(function(b){
   b.onclick=function(){
-    document.querySelectorAll('nav button').forEach(function(x){x.classList.remove('on');});
-    b.classList.add('on');
-    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
-    document.getElementById('pg-'+b.dataset.p).classList.add('on');
-    if(b.dataset.p==='hist')renderList();
+    var v=b.getAttribute('data-v');
+    if(v==='list')renderList();
+    if(v==='write')loadToday();
+    show(v);
   };
 });
 
-var dateEl=document.getElementById('date'),bodyEl=document.getElementById('body');
-
-document.getElementById('btn-analyze').onclick=function(){
-  var t=bodyEl.value.trim();
-  if(!t){toast('还没写内容');return;}
-  curDate=dateEl.value;cur=analyze(t);
-  store.days[curDate]={text:t,a:cur};save();
-  renderResult(cur);
-  document.getElementById('articleCard').style.display='none';
-  toast('分析完了，看看对不对');
-};
-
-document.getElementById('btn-fix').onclick=function(){
-  if(!cur)return;
-  var p=prompt('项目名（改完回车）',cur.proj==='推断不出'?'':cur.proj);
-  if(p===null)return;
-  cur.proj=p.trim()||'推断不出';
-  store.days[curDate].a=cur;save();renderResult(cur);
-};
-
-document.getElementById('btn-copyAnalysis').onclick=function(){
-  if(!cur)return;
-  var s='['+curDate+'] '+cur.main+'\n项目：'+cur.proj+'\n类型：'+cur.types.join('、')+
-    '\n耗时：'+cur.hours+'\n状态：'+cur.status+'\n情绪：'+cur.mood;
-  copyStr(s).then(function(){toast('已复制');},function(){toast('复制失败');});
-};
-
-document.getElementById('btn-write').onclick=async function(){
-  if(!cur)return;
-  var card=document.getElementById('articleCard');
-  card.style.display='';
-  var box=document.getElementById('article');
-  box.textContent='正在写…';
-  document.getElementById('artMode').textContent='';
-  try{
-    var sys=SYS_ARTICLE.replace('{STYLE}',store.style||DEF_STYLE);
-    var user='日期：'+curDate+'\n今天的事：\n'+bodyEl.value+'\n\n主线：'+cur.main+
-      '\n\n请写成一篇公众号文章，直接给标题和正文。';
-    var out=await chat(sys,user);
-    box.textContent=out;
-    document.getElementById('artMode').innerHTML='<span class="badge">AI</span>';
-    store.days[curDate].article=out;save();
-  }catch(e){
-    box.textContent='写不出来：'+e.message+'\n\n两条路：① 去设置页填个接口，前三个是免费的；② 点下面「复制提示词」，粘给 WorkBuddy 让他写，一分钱不用花。';
-    document.getElementById('artMode').innerHTML='<span class="badge w">未配置</span>';
-  }
-};
-
-document.getElementById('btn-rewrite').onclick=function(){document.getElementById('btn-write').click();};
-document.getElementById('btn-copyArticle').onclick=function(){
-  var t=document.getElementById('article').textContent;
-  if(!t||t==='正在写…')return;
-  copyStr(t).then(function(){toast('已复制');},function(){toast('复制失败');});
-};
-
-function articlePrompt(){
-  var sys=SYS_ARTICLE.replace('{STYLE}',store.style||DEF_STYLE);
-  return sys+'\n\n---\n\n下面是今天的素材，请写成一篇公众号文章，直接输出标题和正文：\n\n日期：'+curDate+
-    '\n今天的事：\n'+bodyEl.value+'\n\n主线：'+cur.main;
+/* ---------- 写 ---------- */
+function loadToday(){
+  var id=todayId();
+  $('d-today').textContent=fmt(id).replace(' ','·');
+  $('w-today').textContent='';
+  var e=find(id);
+  $('raw').value=e?e.raw:'';
+  $('saved-tip').textContent=e?'已保存':'';
+  autoGrow();
 }
-document.getElementById('btn-promptArt').onclick=function(){
-  if(!cur){toast('先点「分析」');return;}
-  copyStr(articlePrompt()).then(function(){
-    toast('复制好了，粘给 WorkBuddy 发过去');
-  },function(){toast('复制失败');});
-};
-document.getElementById('btn-promptReview').onclick=function(){
-  var raw=window.__reviewRaw;
-  if(!raw){toast('先点「本周」或「本月」');return;}
-  copyStr(SYS_POLISH+'\n\n---\n\n原始统计：\n'+raw).then(function(){
-    toast('复制好了，粘给 WorkBuddy 发过去');
-  },function(){toast('复制失败');});
+function autoGrow(){
+  var t=$('raw');t.style.height='auto';
+  t.style.height=Math.max(t.scrollHeight,window.innerHeight*0.44)+'px';
+}
+$('raw').addEventListener('input',autoGrow);
+
+$('btn-save').onclick=function(){
+  var txt=$('raw').value.trim();
+  if(!txt){toast('还没写呢');return;}
+  var id=todayId(),e=find(id);
+  if(e){e.raw=txt;e.upd=Date.now();}
+  else{store.entries.push({id:id,raw:txt,tidy:'',sum:'',insight:'',upd:Date.now()});}
+  persist();
+  $('saved-tip').textContent='已保存';
+  toast('存好了');
 };
 
+/* ---------- 日记本 ---------- */
 function renderList(){
-  var host=document.getElementById('list');host.innerHTML='';
-  var ds=Object.keys(store.days).sort().reverse();
-  if(!ds.length){host.innerHTML='<div class="empty">还没存过</div>';return;}
-  ds.slice(0,40).forEach(function(d){
-    var r=store.days[d];var a=r.a||analyze(r.text);
-    var el=document.createElement('div');el.className='day';
-    var head=document.createElement('div');head.className='d';
-    var left=document.createElement('span');left.textContent=d;
-    var ops=document.createElement('span');
-    var o=document.createElement('button');o.className='mini';o.textContent='打开';
-    o.onclick=function(){
-      document.querySelector('nav button[data-p="today"]').click();
-      dateEl.value=d;bodyEl.value=r.text;cur=a;curDate=d;renderResult(a);
-      document.getElementById('articleCard').style.display=r.article?'':'none';
-      if(r.article)document.getElementById('article').textContent=r.article;
-    };
-    var del=document.createElement('button');del.className='mini del';del.textContent='删';
-    del.onclick=function(){delete store.days[d];save();renderList();};
-    ops.appendChild(o);ops.appendChild(del);
-    head.appendChild(left);head.appendChild(ops);
-    var p=document.createElement('p');p.className='p';
-    p.textContent=r.text.slice(0,80)+(r.text.length>80?'…':'');
-    var m=document.createElement('div');m.className='m';
-    m.textContent=[a.proj,a.types.join('、'),a.hours,a.status,a.mood].filter(Boolean).join(' · ');
-    el.appendChild(head);el.appendChild(p);el.appendChild(m);
-    host.appendChild(el);
+  var box=$('list'),list=store.entries.slice().sort(function(a,b){return a.id<b.id?1:-1;});
+  $('count').textContent=list.length?list.length+' 篇':'';
+  if(!list.length){box.innerHTML='<div class="empty">还没有日记。<br>去「写日记」写第一篇。</div>';return;}
+  box.innerHTML='';
+  list.forEach(function(e){
+    var d=document.createElement('div');d.className='item';
+    var tags=[];
+    if(e.tidy)tags.push('整理');
+    if(e.sum)tags.push('总结');
+    if(e.insight)tags.push('洞察');
+    var h=document.createElement('div');h.className='h';
+    var dt=document.createElement('span');dt.className='dt';dt.textContent=fmt(e.id);
+    h.appendChild(dt);
+    if(tags.length){var tg=document.createElement('span');tg.className='tags';tg.textContent=tags.join(' · ');h.appendChild(tg);}
+    var pv=document.createElement('div');pv.className='pv';pv.textContent=e.raw.slice(0,90);
+    d.appendChild(h);d.appendChild(pv);
+    d.onclick=function(){openNote(e.id);};
+    box.appendChild(d);
   });
 }
 
-function showReview(range){
-  var t=buildReview(range);
-  document.getElementById('reviewCard').style.display='';
-  document.getElementById('review').textContent=t;
-  window.__reviewRange=range;window.__reviewRaw=t;
+/* ---------- 单篇 ---------- */
+function openNote(id){
+  cur=find(id);
+  if(!cur)return;
+  $('note-date').textContent=fmt(id);
+  $('note-raw').textContent=cur.raw;
+  paint('tidy');paint('sum');paint('insight');
+  $('note-status').textContent='';
+  show('note');
 }
-document.getElementById('btn-week').onclick=function(){showReview('week');};
-document.getElementById('btn-month').onclick=function(){showReview('month');};
-document.getElementById('btn-copyReview').onclick=function(){
-  copyStr(document.getElementById('review').textContent).then(function(){toast('已复制');},function(){toast('复制失败');});
+function paint(k){
+  var map={tidy:['c-tidy','b-tidy'],sum:['c-sum','b-sum'],insight:['c-insight','b-insight']};
+  var m=map[k];
+  if(cur[k]){$(m[0]).style.display='';$(m[1]).textContent=cur[k];$(m[1]).className='body';}
+  else{$(m[0]).style.display='none';}
+}
+$('btn-back').onclick=function(){renderList();show('list');};
+$('btn-edit').onclick=function(){
+  $('raw').value=cur.raw;show('write');autoGrow();toast('改完点保存');
 };
-document.getElementById('btn-polish').onclick=async function(){
-  var raw=window.__reviewRaw;
-  if(!raw){toast('先点本周或本月');return;}
-  var box=document.getElementById('review');box.textContent='正在改…';
-  try{
-    var out=await chat(SYS_POLISH,'原始统计：\n'+raw);
-    box.textContent=out;
-  }catch(e){
-    box.textContent=raw+'\n\n（AI 润色没跑起来：'+e.message+'）';
-  }
+$('btn-del').onclick=function(){
+  if(!confirm('删掉这一篇？删了就找不回来了。'))return;
+  store.entries=store.entries.filter(function(e){return e.id!==cur.id;});
+  persist();cur=null;renderList();show('list');toast('删了');
 };
 
+/* ---------- AI ---------- */
+function voiceLine(){
+  var v=(store.voice||'').trim();
+  return v?('\n\n她的说话习惯（整理时要贴着这个来）：\n'+v):'';
+}
+var P_TIDY=[
+'你在帮一个人整理她的日记。下面是她的原话。',
+'',
+'规则：',
+'- 只做整理：理顺语句、分段、补标点，删掉重复的口头语。',
+'- 保留所有具体细节：时间、数字、人名、地名、她原话里的语气词。',
+'- 不改她的判断，不替她下结论，不升华，不加金句。',
+'- 保持第一人称，保持她原来的语序，不要改写成书面语。',
+'- 长度不要比原文长。',
+'- 不要出现这些词：首先、其次、总之、值得注意的是、不仅、而且、而是。',
+'',
+'直接输出整理后的正文。不要标题，不要解释，不要用代码块包起来。',
+'',
+'原文：'
+].join('\n');
+var P_SUM=[
+'把下面这篇日记总结成五条。',
+'',
+'① 发生了什么／心情和状态',
+'② 灵感与想法要点',
+'③ 有什么积极的愿望',
+'④ 要感谢的事',
+'⑤ 未完成待办',
+'',
+'要求：',
+'- 每条用短句，一到三行，不要写成长段落。',
+'- 只用日记里真实有的内容。某一条确实没有，就写「无」，不要编。',
+'- 待办要具体到能照着做，比如「问儿子喜欢什么歌」，而不是「多关心孩子」。',
+'- 不用套话，不加总结句，结尾不要鼓励语。',
+'',
+'严格按这个格式输出，一条一行，用 ①②③④⑤ 开头：',
+'',
+'日记：'
+].join('\n');
+var P_INS=[
+'你是她的心理顾问，也是她信任的长辈。说话直接，不哄人，也不说教。',
+'',
+'基于下面这篇日记，写一段分析。',
+'',
+'要求：',
+'- 先说你在她这段话里看到的一个具体的模式或矛盾，指出来，不要泛泛地说「你很努力」「你很独立」。',
+'- 可以温和地指出她在回避什么、在替谁承担、在害怕什么。',
+'- 给一到两个今天或这周就能做的小建议，要具体。',
+'- 最后说一句你能真心说出口的话，不要励志口号。',
+'- 三百到五百字，短句，分段，不用小标题，不用 emoji。',
+'- 不下诊断，不用心理学术语装门面。',
+'- 不要用「以下是分析」开头，直接写。',
+'',
+'日记：'
+].join('\n');
+
+async function chat(userText){
+  var c=store.cfg;
+  if(!c.base||!c.key||!c.model)throw new Error('NOKEY');
+  var url=c.base.replace(/\/+$/,'')+'/chat/completions';
+  var r;
+  try{
+    r=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+c.key},
+      body:JSON.stringify({model:c.model,temperature:0.8,max_tokens:1600,
+        messages:[{role:'system',content:'你是中文助手。输出直接、干净，不寒暄，不用套话。'},{role:'user',content:userText}]})
+    });
+  }catch(e){
+    throw new Error('FETCH:网络没通，或者这个接口不允许网页直接调用');
+  }
+  var t=await r.text();
+  if(!r.ok){
+    var m='';
+    try{var j=JSON.parse(t);m=(j.error&&(j.error.message||j.error.code))||j.message||t;}catch(e){m=t;}
+    throw new Error('HTTP'+r.status+':'+String(m).slice(0,200));
+  }
+  var d;
+  try{d=JSON.parse(t);}catch(e){throw new Error('PARSE:返回的东西不是 JSON');}
+  var out=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+  if(!out)throw new Error('EMPTY:返回空内容');
+  return out.trim();
+}
+function explain(e){
+  var s=String(e.message||e);
+  if(s.indexOf('NOKEY')>-1)return '先去「设置」填一个 AI 接口。或者点下面的「复制提示词」，把它发给我，我来写。';
+  if(s.indexOf('FETCH')>-1)return '连不上这个接口（跨域被拦或网络不通）。换个服务商试试，或者用「复制提示词」。';
+  if(s.indexOf('HTTP401')>-1)return 'Key 不对或已失效。回设置里重新复制一遍。';
+  if(s.indexOf('HTTP402')>-1)return '服务商提示没余额。免费模型也可能被拦——硅基流动要实名认证后充 0.01 元才解锁，或者换 OpenRouter 免费模型。';
+  if(s.indexOf('HTTP429')>-1)return '请求太频繁，是免费档的限速。等十几秒再点一次。';
+  if(s.indexOf('HTTP404')>-1)return '接口地址或模型名不对。检查设置里的地址（要带 /v1）和模型名。';
+  return s;
+}
+function busy(on,txt){
+  document.querySelectorAll('#v-note .btn').forEach(function(b){b.disabled=on;});
+  $('note-status').textContent=on?txt:'';
+}
+function recentContext(id){
+  var list=store.entries.filter(function(e){return e.id<id;}).sort(function(a,b){return a.id<b.id?1:-1;}).slice(0,2);
+  if(!list.length)return '';
+  return '\n\n她前几天的日记（供参考，不要复述）：\n'+list.map(function(e){
+    return '【'+e.id+'】'+e.raw.slice(0,400);
+  }).join('\n\n');
+}
+async function run(kind){
+  if(!cur)return;
+  var prompt,txt,label;
+  if(kind==='tidy'){prompt=P_TIDY+cur.raw+voiceLine();label='正在整理…';}
+  else if(kind==='sum'){prompt=P_SUM+cur.raw;label='正在总结…';}
+  else{prompt=P_INS+cur.raw+recentContext(cur.id);label='正在读你…';}
+  busy(true,label);
+  try{
+    txt=await chat(prompt);
+    cur[kind]=txt;cur.upd=Date.now();persist();paint(kind);
+    $('note-status').textContent='';
+  }catch(e){
+    $('note-status').textContent=explain(e);
+  }finally{busy(false);}
+}
+$('btn-tidy').onclick=function(){run('tidy');};
+$('btn-sum').onclick=function(){run('sum');};
+$('btn-insight').onclick=function(){run('insight');};
+
+/* ---------- 复制 ---------- */
+function copyStr(s){
+  if(navigator.clipboard&&window.isSecureContext){
+    return navigator.clipboard.writeText(s);
+  }
+  return new Promise(function(res,rej){
+    var ta=document.createElement('textarea');ta.value=s;
+    ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');res();}catch(e){rej(e);}
+    document.body.removeChild(ta);
+  });
+}
+function cp(id,key){
+  if(!cur||!cur[key]){toast('还没有内容');return;}
+  copyStr(cur[key]).then(function(){toast('已复制');},function(){toast('复制失败');});
+}
+$('btn-copy-tidy').onclick=function(){cp(null,'tidy');};
+$('btn-copy-sum').onclick=function(){cp(null,'sum');};
+$('btn-copy-insight').onclick=function(){cp(null,'insight');};
+
+function toMd(e){
+  var s='---\ndate: '+e.id+'\ntags: [日记]\n---\n\n# '+fmt(e.id)+'\n\n## 日记\n\n'+(e.tidy||e.raw)+'\n';
+  if(e.sum)s+='\n## 今天\n\n'+e.sum+'\n';
+  if(e.insight)s+='\n## 说给你听\n\n'+e.insight+'\n';
+  return s;
+}
+$('btn-copymd').onclick=function(){
+  if(!cur)return;
+  copyStr(toMd(cur)).then(function(){toast('已复制 Markdown');},function(){toast('复制失败');});
+};
+$('btn-copyprompt').onclick=function(){
+  if(!cur)return;
+  var p='这是我 '+cur.id+' 的日记，帮我做三件事，按顺序分开写，用三个小标题「整理」「今天」「说给你听」。\n\n'
+    +'1. 整理：理顺分段补标点，保留我所有细节和语气，不改我的判断，不升华。\n'
+    +'2. 今天：用 ①②③④⑤ 五条总结——① 发生了什么/心情状态 ② 灵感与想法 ③ 积极的愿望 ④ 要感谢的事 ⑤ 未完成待办。没有的写「无」。\n'
+    +'3. 说给你听：像心理顾问那样，指出你看到的一个具体模式，给一到两个能立刻做的建议，结尾说句真心话，三百到五百字。\n\n'
+    +'日记：\n'+cur.raw;
+  copyStr(p).then(function(){toast('已复制，去粘给 WorkBuddy');},function(){toast('复制失败');});
+};
+
+/* ---------- 设置 ---------- */
 var PRESETS={
   siliconflow_free:{base:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2.5-7B-Instruct',
-    tip:'免费，手机网页能直连。步骤：siliconflow.cn 注册 → 完成「实名认证」→ 「API 密钥」新建，粘到下面。⚠️ 常见坑：新账户送的是代金券≠余额，现金余额为 0 会被判定欠费、报「没余额」——去「充值」充 0.01 元解锁，之后免费模型永远不扣费。'},
+    tip:'免费，手机能直连。siliconflow.cn 注册 → 左侧「API 密钥」新建。注意：新账户送的代金券不算余额，现金为 0 会被拦（报 402 没余额），需要实名认证 + 充 0.01 元解锁，之后免费模型零扣费。'},
   openrouter_free:{base:'https://openrouter.ai/api/v1',model:'deepseek/deepseek-r1:free',
-    tip:'免费，手机网页能直连。openrouter.ai 注册 → Keys → Create Key。模型名带 :free 的不扣费。国外服务，需要能正常访问。'},
-  zhipu:{base:'https://open.bigmodel.cn/api/paas/v4',model:'glm-4-flash',
-    tip:'⚠️ 不推荐：智谱的接口不允许网页直接调用，测试连接必然失败（跟你的 Key 没关系）。想用智谱就走「复制提示词」那条路，或者换上面的硅基流动。'},
+    tip:'免费，注册就送 Key（openrouter.ai → Keys）。模型名带 :free 的不扣费。国外服务，网络要能访问。'},
   deepseek:{base:'https://api.deepseek.com/v1',model:'deepseek-chat',
-    tip:'不免费，但很便宜。充 10 块能用很久。platform.deepseek.com 注册生成 Key。'},
-  siliconflow:{base:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2.5-72B-Instruct',
-    tip:'付费模型，效果比免费版好。注册送一点额度，用完按量计费。'},
+    tip:'不免费但很便宜，充 10 块能用很久。platform.deepseek.com 拿 Key。'},
   moonshot:{base:'https://api.moonshot.cn/v1',model:'moonshot-v1-8k',
-    tip:'付费，注册送额度。长文本还行。'},
-  openai:{base:'https://api.openai.com/v1',model:'gpt-4o-mini',
-    tip:'付费，需要海外支付方式。'}
+    tip:'按量付费。platform.moonshot.cn 拿 Key。'},
+  zhipu:{base:'https://open.bigmodel.cn/api/paas/v4',model:'glm-4-flash',
+    tip:'别选这个：智谱接口不允许网页直连，填了 Key 也一定失败。'}
 };
-document.getElementById('preset').onchange=function(){
-  var v=this.value,hint=document.getElementById('presetHint');
-  if(v==='custom'){
-    document.getElementById('base').value='';document.getElementById('model').value='';
-    hint.style.display='';hint.textContent='自己填接口地址和模型名。任何兼容 OpenAI 格式的服务都能用。';
-    return;
-  }
+$('preset').onchange=function(){
+  var v=this.value,h=$('presetHint');
+  if(v==='custom'){h.style.display='none';$('base').value='';$('model').value='';return;}
   var p=PRESETS[v];
-  if(p){
-    document.getElementById('base').value=p.base;
-    document.getElementById('model').value=p.model;
-    hint.style.display='';hint.textContent=p.tip;
-  }else{hint.style.display='none';}
+  if(p){$('base').value=p.base;$('model').value=p.model;h.textContent=p.tip;h.style.display='';}
 };
-
-document.getElementById('btn-saveSet').onclick=function(){
-  store.cfg={
-    base:document.getElementById('base').value.trim(),
-    model:document.getElementById('model').value.trim(),
-    key:document.getElementById('key').value.trim()
-  };
-  store.projects=document.getElementById('projects').value;
-  store.style=document.getElementById('style').value;
-  save();toast('已保存');
+function fillCfg(){
+  $('base').value=store.cfg.base||'';
+  $('model').value=store.cfg.model||'';
+  $('key').value=store.cfg.key||'';
+  $('voice').value=store.voice||'';
+}
+$('btn-savecfg').onclick=function(){
+  store.cfg={base:$('base').value.trim(),model:$('model').value.trim(),key:$('key').value.trim()};
+  store.voice=$('voice').value.trim();
+  persist();toast('设置已保存');
 };
-
-document.getElementById('btn-test').onclick=async function(){
-  var c={
-    base:document.getElementById('base').value.trim(),
-    model:document.getElementById('model').value.trim(),
-    key:document.getElementById('key').value.trim()
-  };
-  if(!c.base||!c.key){toast('地址和密钥都要填');return;}
-  var hint=document.getElementById('presetHint');
-  hint.style.display='';hint.style.color='#c0392b';hint.textContent='正在测试…';
-  var old=store.cfg;store.cfg=c;
+$('btn-test').onclick=async function(){
+  var old=store.cfg;
+  store.cfg={base:$('base').value.trim(),model:$('model').value.trim(),key:$('key').value.trim()};
+  $('testHint').textContent='正在连…';
   try{
-    var r=await chat('你只回复两个字：正常','测试');
-    hint.style.color='';hint.textContent='连上了。记得点下面的「保存设置」。';
-    toast('连上了');
+    var r=await chat('只回复两个字：好的');
+    $('testHint').textContent='连上了：'+r.slice(0,30)+'　（别忘了点「保存设置」）';
   }catch(e){
-    var m=String(e.message||e);
-    var msg;
-    if(/fetch|Load failed|NetworkError/i.test(m)){
-      msg='请求根本没发出去（'+m+'）。两种可能：① 这个服务商不允许网页直连——智谱就是这样，换「硅基流动 · 免费模型」；② 当前网络访问不了这个地址——OpenRouter 在有的网络下打不开。';
-    }else if(/401|403|令牌|api key|invalid/i.test(m)){
-      msg='服务商说密钥不对（'+m+'）。检查：① Key 是不是完整复制了，开头结尾别带空格；② Key 是不是这个服务商的——智谱的 Key 填到硅基流动里当然不行；③ 刚创建的 Key 有的要等几分钟才生效。';
-    }else if(/402|余额|balance|insufficient/i.test(m)){
-      msg='服务商说没余额（'+m+'）。如果你用的是硅基流动且刚注册：它送的是代金券，不算余额——账户现金为 0 会被判定欠费，免费模型也会报这个错。去官网完成「实名认证」，再充 0.01 元解锁，之后免费模型不再扣费。不想充一分钱就换「OpenRouter · 免费模型」，或者走「复制提示词」那条路。';
-    }else if(/429|频繁|rate/i.test(m)){
-      msg='触发限速（'+m+'）。免费档限得紧，等几秒再点一次测试就行，不是坏了。';
-    }else{
-      msg='失败：'+m;
-    }
-    hint.textContent=msg;
-    toast('没连上，看下面的说明');
-  }
-  finally{store.cfg=old;}
+    $('testHint').textContent='失败 —— '+explain(e);
+  }finally{store.cfg=old;}
 };
 
-document.getElementById('btn-export').onclick=function(){
-  var blob=new Blob([JSON.stringify(store,null,1)],{type:'application/json'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='jilu-backup-'+todayStr()+'.json';a.click();
-  setTimeout(function(){URL.revokeObjectURL(a.href);},1500);
+/* ---------- 导入导出 ---------- */
+$('btn-export').onclick=function(){
+  var blob=new Blob([JSON.stringify(store,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='日记备份-'+todayId()+'.json';
+  a.click();
+  toast('已导出');
 };
-var fi=document.getElementById('fileInput');
-document.getElementById('btn-import').onclick=function(){fi.click();};
-fi.onchange=function(){
-  var f=fi.files[0];if(!f)return;
-  var r=new FileReader();
-  r.onload=function(){
+$('btn-import').onclick=function(){$('file').click();};
+$('file').onchange=function(){
+  var f=this.files[0];if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){
     try{
-      var o=JSON.parse(r.result);
-      if(!o.days)throw new Error('格式不对');
-      store=o;save();
-      document.getElementById('projects').value=store.projects||'';
-      document.getElementById('style').value=store.style||DEF_STYLE;
-      document.getElementById('base').value=(store.cfg||{}).base||'';
-      document.getElementById('model').value=(store.cfg||{}).model||'';
-      document.getElementById('key').value=(store.cfg||{}).key||'';
-      renderList();toast('导入成功');
-    }catch(e){toast('导入失败：'+e.message);}
+      var s=JSON.parse(rd.result);
+      if(!s.entries)throw new Error('格式不对');
+      var n=0;
+      s.entries.forEach(function(e){
+        var old=find(e.id);
+        if(old){Object.assign(old,e);}else{store.entries.push(e);}
+        n++;
+      });
+      if(s.voice&&!store.voice)store.voice=s.voice;
+      persist();renderList();toast('导入了 '+n+' 篇');
+    }catch(e){toast('导入失败：文件不对');}
   };
-  r.readAsText(f);
+  rd.readAsText(f);
 };
 
-document.getElementById('projects').value=store.projects||'';
-document.getElementById('style').value=store.style||DEF_STYLE;
-document.getElementById('base').value=store.cfg.base||'';
-document.getElementById('model').value=store.cfg.model||'';
-document.getElementById('key').value=store.cfg.key||'';
-dateEl.value=todayStr();
-if(store.days[dateEl.value]){bodyEl.value=store.days[dateEl.value].text;}
-renderList();
+/* ---------- 启动 ---------- */
+load();fillCfg();loadToday();
 </script>
 </body>
 </html>
