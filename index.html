@@ -178,15 +178,15 @@ nav button.on .dot{background:var(--tx)}
       <p class="hint" style="margin:0 0 10px">
         <b>分析和复盘是本地算的，一分钱不用花。</b><br>
         只有「自动写文章」需要 AI，两条路：<br>
-        <b>①</b> 下面填一个免费接口（前三个都是免费的）<br>
+        <b>①</b> 下面填一个免费接口（推荐硅基流动）<br>
         <b>②</b> 什么都不填，去文章页点「复制提示词」，粘给 WorkBuddy 让他写<br>
         密钥只存在这台手机里，不会上传。
       </p>
       <select id="preset" style="margin-bottom:8px">
         <option value="">选一个服务商…</option>
-        <option value="zhipu">智谱 GLM-4-Flash（免费，推荐）</option>
-        <option value="siliconflow_free">硅基流动 · 免费模型</option>
-        <option value="openrouter_free">OpenRouter · 免费模型</option>
+        <option value="siliconflow_free">硅基流动 · 免费模型（免费，推荐）</option>
+        <option value="openrouter_free">OpenRouter · 免费模型（免费）</option>
+        <option value="zhipu">智谱 GLM-4-Flash（免费，但网页连不上）</option>
         <option value="deepseek">DeepSeek（便宜，几块钱用很久）</option>
         <option value="siliconflow">硅基流动 · 付费模型</option>
         <option value="moonshot">Moonshot / Kimi</option>
@@ -600,12 +600,12 @@ document.getElementById('btn-polish').onclick=async function(){
 };
 
 var PRESETS={
-  zhipu:{base:'https://open.bigmodel.cn/api/paas/v4',model:'glm-4-flash',
-    tip:'免费。去 open.bigmodel.cn 注册 → 控制台生成 API Key，粘到下面。glm-4-flash 长期免费，日常够用。免费档有限速，卡住了等几秒重试。'},
   siliconflow_free:{base:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2.5-7B-Instruct',
-    tip:'免费。去 siliconflow.cn 注册 → API 密钥。带 free 标记的模型不扣费。7B 模型能力一般，写短文够。'},
+    tip:'免费，手机网页能直连。siliconflow.cn 注册（手机号就行）→ 左侧「API 密钥」→ 新建，粘到下面。Qwen2.5-7B 不扣费，写短文够用。'},
   openrouter_free:{base:'https://openrouter.ai/api/v1',model:'deepseek/deepseek-r1:free',
-    tip:'免费。去 openrouter.ai 注册 → Keys → Create Key，粘到下面。模型名带 :free 的不扣费。国外服务，需要能正常访问。'},
+    tip:'免费，手机网页能直连。openrouter.ai 注册 → Keys → Create Key。模型名带 :free 的不扣费。国外服务，需要能正常访问。'},
+  zhipu:{base:'https://open.bigmodel.cn/api/paas/v4',model:'glm-4-flash',
+    tip:'⚠️ 不推荐：智谱的接口不允许网页直接调用，测试连接必然失败（跟你的 Key 没关系）。想用智谱就走「复制提示词」那条路，或者换上面的硅基流动。'},
   deepseek:{base:'https://api.deepseek.com/v1',model:'deepseek-chat',
     tip:'不免费，但很便宜。充 10 块能用很久。platform.deepseek.com 注册生成 Key。'},
   siliconflow:{base:'https://api.siliconflow.cn/v1',model:'Qwen/Qwen2.5-72B-Instruct',
@@ -648,11 +648,30 @@ document.getElementById('btn-test').onclick=async function(){
     key:document.getElementById('key').value.trim()
   };
   if(!c.base||!c.key){toast('地址和密钥都要填');return;}
+  var hint=document.getElementById('presetHint');
+  hint.style.display='';hint.style.color='#c0392b';hint.textContent='正在测试…';
   var old=store.cfg;store.cfg=c;
   try{
     var r=await chat('你只回复两个字：正常','测试');
-    toast('连上了：'+r.slice(0,20));
-  }catch(e){toast('失败：'+e.message.slice(0,60));}
+    hint.style.color='';hint.textContent='连上了。记得点下面的「保存设置」。';
+    toast('连上了');
+  }catch(e){
+    var m=String(e.message||e);
+    var msg;
+    if(/fetch|Load failed|NetworkError/i.test(m)){
+      msg='请求根本没发出去（'+m+'）。两种可能：① 这个服务商不允许网页直连——智谱就是这样，换「硅基流动 · 免费模型」；② 当前网络访问不了这个地址——OpenRouter 在有的网络下打不开。';
+    }else if(/401|403|令牌|api key|invalid/i.test(m)){
+      msg='服务商说密钥不对（'+m+'）。检查：① Key 是不是完整复制了，开头结尾别带空格；② Key 是不是这个服务商的——智谱的 Key 填到硅基流动里当然不行；③ 刚创建的 Key 有的要等几分钟才生效。';
+    }else if(/402|余额|balance|insufficient/i.test(m)){
+      msg='服务商说没余额了（'+m+'）。免费模型不扣费，付费模型要先充值，或者换免费档。';
+    }else if(/429|频繁|rate/i.test(m)){
+      msg='触发限速（'+m+'）。免费档限得紧，等几秒再点一次测试就行，不是坏了。';
+    }else{
+      msg='失败：'+m;
+    }
+    hint.textContent=msg;
+    toast('没连上，看下面的说明');
+  }
   finally{store.cfg=old;}
 };
 
