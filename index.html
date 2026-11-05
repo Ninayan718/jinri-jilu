@@ -62,6 +62,10 @@ label.lb{display:block; font-size:13px; color:var(--sub); margin:18px 0 6px}
 input,select{width:100%; border:1px solid var(--line); border-radius:10px; padding:12px 13px;
   font-family:inherit; font-size:15px; background:var(--card); color:var(--ink); outline:none}
 input:focus,select:focus{border-color:var(--accent)}
+input.datepick{width:auto;border:0;background:transparent;padding:0;font-size:19px;
+  font-weight:600;color:var(--ink);font-family:inherit;outline:none;-webkit-appearance:none;
+  letter-spacing:.2px}
+input.datepick:focus{border:0}
 .hint{font-size:12.5px; color:var(--sub); line-height:1.8; margin:8px 0 0}
 nav{display:flex; border-top:1px solid var(--line); background:rgba(255,255,255,.94);
   backdrop-filter:blur(12px); padding-bottom:env(safe-area-inset-bottom)}
@@ -99,12 +103,15 @@ nav button.on{color:var(--accent)}
 
     <section class="view on" id="v-write">
       <div class="top">
-        <div><span class="d" id="d-today">今天</span><span class="w" id="w-today"></span></div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <input type="date" id="dpick" class="datepick">
+          <span class="w" id="w-today"></span>
+        </div>
         <span class="w" id="saved-tip"></span>
       </div>
       <textarea id="raw" placeholder="今天……"></textarea>
       <button class="btn" id="btn-save">保存</button>
-      <div class="hint">想到什么写什么，不用整理，错别字也不用改。写完保存，可以去下面「日记本」里让她整理。</div>
+      <div class="hint">想到什么写什么，不用整理，错别字也不用改。<br>点上面的日期可以换日子——忘了写的那天，想起来随时补。</div>
     </section>
 
     <section class="view" id="v-note">
@@ -294,15 +301,23 @@ document.querySelectorAll('nav button').forEach(function(b){
 });
 
 /* ---------- 写 ---------- */
-function loadToday(){
-  var id=todayId();
-  $('d-today').textContent=fmt(id).replace(' ','·');
-  $('w-today').textContent='';
+var curDate=todayId();
+function setDate(id){
+  curDate=id;
+  $('dpick').value=id;
+  $('w-today').textContent=(id===todayId())?'':'补写';
   var e=find(id);
   $('raw').value=e?e.raw:'';
-  $('saved-tip').textContent=e?'已保存':'';
+  $('saved-tip').textContent=e?'已保存':'这天还没有日记';
   autoGrow();
 }
+function loadToday(){setDate(todayId());}
+$('dpick').max=todayId();
+$('dpick').onchange=function(){
+  if(!this.value)return;
+  if(this.value>todayId()){toast('不能选以后的日子');this.value=curDate;return;}
+  setDate(this.value);
+};
 function autoGrow(){
   var t=$('raw');t.style.height='auto';
   t.style.height=Math.max(t.scrollHeight,window.innerHeight*0.44)+'px';
@@ -312,7 +327,7 @@ $('raw').addEventListener('input',autoGrow);
 $('btn-save').onclick=function(){
   var txt=$('raw').value.trim();
   if(!txt){toast('还没写呢');return;}
-  var id=todayId(),e=find(id);
+  var id=curDate,e=find(id);
   if(e){e.raw=txt;e.upd=Date.now();}
   else{store.entries.push({id:id,raw:txt,tidy:'',sum:'',insight:'',upd:Date.now()});}
   persist();
@@ -361,7 +376,7 @@ function paint(k){
 }
 $('btn-back').onclick=function(){renderList();show('list');};
 $('btn-edit').onclick=function(){
-  $('raw').value=cur.raw;show('write');autoGrow();toast('改完点保存');
+  setDate(cur.id);show('write');autoGrow();toast('改完点保存');
 };
 $('btn-del').onclick=function(){
   if(!confirm('删掉这一篇？删了就找不回来了。'))return;
