@@ -95,6 +95,13 @@ nav button.on{color:var(--accent)}
 .same+.same{margin-top:12px; padding-top:12px; border-top:1px solid var(--line)}
 .spin{display:inline-block; animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.sthead{display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+  margin:30px 0 2px; padding-top:20px; border-top:1px solid var(--line)}
+.sthead b{font-size:15px; font-weight:600}
+.sthead span{font-size:12px; color:var(--sub)}
+.evt{display:inline-block; font-size:11px; border-radius:6px; padding:1px 6px; margin-left:7px;
+  background:var(--accent-soft); color:var(--accent); font-weight:400; vertical-align:1px}
+.evt.down{background:#F7EAE4; color:var(--warn)}
 </style>
 </head>
 <body>
@@ -188,15 +195,38 @@ nav button.on{color:var(--accent)}
       <div class="row2">
         <button class="mini" id="btn-rv-prompt" style="flex:1">复制提示词（不填接口也能用）</button>
       </div>
+
+      <div class="sthead"><b>找优势</b><span>只认你的原话，不贴标签</span></div>
+
+      <div class="card" id="st-card" style="display:none">
+        <h3>攒起来的证据</h3>
+        <p class="hint" id="st-note" style="margin:0 0 12px"></p>
+        <div class="chips" id="st-themes"></div>
+        <div id="st-evlist"></div>
+      </div>
+
+      <button class="btn ghost" id="btn-strength">让 AI 找优势</button>
+      <div class="status" id="st-status"></div>
+
+      <div class="card" id="st-ai-card" style="display:none">
+        <h3>读出来的优势<button class="mini" id="btn-copy-strength">复制</button></h3>
+        <div class="body" id="st-ai"></div>
+      </div>
+
+      <div class="row2">
+        <button class="mini" id="btn-st-prompt" style="flex:1">复制优势提示词（不填接口也能用）</button>
+      </div>
+
       <div class="hint">
-        回顾不是数数，是把这几天的日记放在一起看线：主线在哪、什么在反复、有没有变。
+        回顾不是数数，是把这几天的日记放在一起看线：主线在哪、什么在反复、有没有变。<br>
+        找优势只从日记原话里摘证据：同一件事在 3 个不同日子、跨 2 周出现，才算候选。不够就只列线索，不下结论。
       </div>
     </section>
 
     <section class="view" id="v-set">
       <div class="top"><div><span class="d">设置</span></div></div>
 
-      <label class="lb">AI 接口（整理、总结、说给你听、回顾要用）</label>
+      <label class="lb">AI 接口（整理、总结、说给你听、回顾、找优势要用）</label>
       <p class="hint" style="margin:0 0 12px">
         前四个都有免费额度，随便挑一个。不填也能记日记，只是得自己动手整理。<br>
         密钥只存在这台手机里，不上传，也不在代码里。
@@ -256,7 +286,7 @@ nav button.on{color:var(--accent)}
 <div id="toast"></div>
 <script>
 var KEY='diary.v1';
-var store={entries:[],cfg:{base:'',model:'',key:''},voice:'',reviews:{}};
+var store={entries:[],cfg:{base:'',model:'',key:''},voice:'',reviews:{},strengths:{}};
 var cur=null;
 
 function $(id){return document.getElementById(id);}
@@ -274,6 +304,7 @@ function load(){
     if(s.cfg)store.cfg=s.cfg;
     if(s.voice)store.voice=s.voice;
     if(s.reviews)store.reviews=s.reviews;
+    if(s.strengths)store.strengths=s.strengths;
   }catch(e){}
 }
 function persist(){localStorage.setItem(KEY,JSON.stringify(store));}
@@ -440,7 +471,7 @@ var P_INS=[
 '日记：'
 ].join('\n');
 
-async function chat(userText){
+async function chat(userText,opts){
   var c=store.cfg;
   if(!c.base||!c.key||!c.model)throw new Error('NOKEY');
   var url=c.base.replace(/\/+$/,'')+'/chat/completions';
@@ -449,7 +480,7 @@ async function chat(userText){
     r=await fetch(url,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+c.key},
-      body:JSON.stringify({model:c.model,temperature:0.8,max_tokens:1600,
+      body:JSON.stringify({model:c.model,temperature:(opts&&typeof opts.temperature==='number')?opts.temperature:0.8,max_tokens:1600,
         messages:[{role:'system',content:'你是中文助手。输出直接、干净，不寒暄，不用套话。'},{role:'user',content:userText}]})
     });
   }catch(e){
@@ -644,11 +675,14 @@ function renderReview(){
     $('rv-ai-card').style.display='none';
     $('rv-status').textContent='';
   }
+
+  renderStrengths(list);
 }
 document.querySelectorAll('#rv-seg button').forEach(function(b){
   b.onclick=function(){
     rvRange=b.getAttribute('data-r');
     $('rv-status').textContent='';
+    $('st-status').textContent='';
     renderReview();
   };
 });
@@ -667,6 +701,177 @@ function rvInstruction(){
     +'④ 一句真话：像她信任的长辈那样说一句，可以不好听，但要真。不要励志口号。\n\n'
     +'规则：只依据给出的日记，不脑补；引用原话用「」短引；不写「继续保持」「相信你」这类话；三百到五百字。\n\n';
 }
+
+/* ---------- 优势证据：只从原话里找，不新增任何输入 ---------- */
+var THEMES=[
+  {name:'把问题做成能用的东西',kws:['做成','工具','搭','写了个','上线','脚本','自动','马上就能用','用上','做出来','弄好','改好']},
+  {name:'主动换环境和方法',kws:['效率','换个','换成','去图书馆','调整','试了','改了','方法','专门','这样更','比在']},
+  {name:'拆解 / 讲明白 / 理清楚',kws:['讲给','说明白','解释','拆开','理清','梳理','整理','写清楚','分条','教','分享','总结']},
+  {name:'被求助 / 帮别人',kws:['帮我','问我','找我','替他','陪他','建议','客户','同事','请教','有人问']},
+  {name:'坚持与自我约束',kws:['坚持','忍住','没刷','控制','戒','一整天','提醒自己','打卡','没有再','又想点']},
+  {name:'观察自己 / 诚实自省',kws:['发现','才意识到','感觉自己','原来','看不得','说不出','写不出','我真的','不了解','居然']},
+  {name:'对数字和成本敏感',kws:['块','钱','房贷','成本','算一下','小时','分钟'],re:/[0-9]/},
+  {name:'照顾别人 / 关系投入',kws:['老公','儿子','孩子','家人','妈妈','伯母','纪念日','担心','买给','陪她']}
+];
+var E_UP=['成就感','来劲','忘了时间','轻松','很爽','不错','开心','满足','踏实','有劲','马上就能用','多往这个方面','想多做','有意思','喜欢','很不错'];
+var E_DOWN=['很慌','不知道该干嘛','熬','终于','硬撑','累','烦','撑不住','不想','拖','没劲','焦虑','写不出','不知道写什么','压力'];
+
+function clip(s,n){s=String(s).trim();return s.length>n?s.slice(0,n)+'…':s;}
+function splitSentences(raw){
+  var t=String(raw||'').replace(/[。！？；;]+/g,'\n');
+  return t.split('\n').map(function(s){
+    return s.replace(/^[0-9]+[.、)）]/,'').trim();
+  }).filter(function(s){return s.length>=6;});
+}
+function hitThemes(s){
+  var out=[];
+  THEMES.forEach(function(t){
+    var ok=false;
+    for(var i=0;i<t.kws.length;i++){if(s.indexOf(t.kws[i])>-1){ok=true;break;}}
+    if(!ok&&t.re&&t.re.test(s))ok=true;
+    if(ok)out.push(t.name);
+  });
+  return out;
+}
+function energyOf(s){
+  var i;
+  for(i=0;i<E_DOWN.length;i++)if(s.indexOf(E_DOWN[i])>-1)return 'down';
+  for(i=0;i<E_UP.length;i++)if(s.indexOf(E_UP[i])>-1)return 'up';
+  return '';
+}
+function weekKey(id){
+  var d=new Date(id+'T00:00:00');
+  return dayShift(id,-((d.getDay()+6)%7));
+}
+function strengthData(list){
+  var ev=[],byTheme={};
+  list.slice().reverse().forEach(function(e){
+    var used=0;
+    splitSentences(e.raw).forEach(function(s){
+      if(used>=4)return;
+      var ts=hitThemes(s);
+      if(!ts.length)return;
+      var en=energyOf(s);
+      ev.push({id:e.id,text:clip(s,96),themes:ts,energy:en});
+      ts.forEach(function(n){
+        if(!byTheme[n])byTheme[n]={dates:{},weeks:{},ups:0,downs:0};
+        var b=byTheme[n];
+        b.dates[e.id]=1;b.weeks[weekKey(e.id)]=1;
+        if(en==='up')b.ups++;
+        if(en==='down')b.downs++;
+      });
+      used++;
+    });
+  });
+  var themes=Object.keys(byTheme).map(function(n){
+    var b=byTheme[n],ds=Object.keys(b.dates),ws=Object.keys(b.weeks);
+    return {name:n,days:ds.length,weeks:ws.length,dates:ds,ups:b.ups,downs:b.downs,
+      ready:(ds.length>=3&&ws.length>=2)};
+  }).sort(function(a,b){return b.days-a.days||b.ups-a.ups||b.weeks-a.weeks;});
+  return {ev:ev,themes:themes};
+}
+function renderStrengths(list){
+  var d=strengthData(list),card=$('st-card');
+  if(!list.length||!d.themes.length){card.style.display='none';}
+  else{
+    card.style.display='';
+    var ready=0;d.themes.forEach(function(t){if(t.ready)ready++;});
+    $('st-note').textContent='从 '+list.length+' 篇里挑出 '+d.ev.length+' 句能当证据的原话。'
+      +'同一件事在 3 个不同日子、跨 2 周出现才算候选，现在有 '+ready+' 个候选，其余只是线索。';
+    var chips=$('st-themes');chips.innerHTML='';
+    d.themes.slice(0,8).forEach(function(t){
+      var s=document.createElement('span');s.className='chip';
+      s.textContent=t.name+' · '+t.days+' 天 / '+t.weeks+' 周';
+      var i=document.createElement('i');i.textContent=t.ready?'候选':'线索';s.appendChild(i);
+      chips.appendChild(s);
+    });
+    var box=$('st-evlist');box.innerHTML='';
+    var shown=d.ev.slice().sort(function(a,b){return (b.energy?1:0)-(a.energy?1:0);}).slice(0,6);
+    shown.forEach(function(x){
+      var el=document.createElement('div');el.className='same';
+      var b=document.createElement('b');b.textContent=x.id+'　'+x.themes.slice(0,2).join(' / ');
+      if(x.energy){
+        var tg=document.createElement('span');
+        tg.className='evt'+(x.energy==='down'?' down':'');
+        tg.textContent=x.energy==='up'?'充电':'耗电 / 反证';
+        b.appendChild(tg);
+      }
+      el.appendChild(b);
+      el.appendChild(document.createTextNode('「'+x.text+'」'));
+      box.appendChild(el);
+    });
+    if(d.ev.length>shown.length){
+      var more=document.createElement('p');more.className='hint';
+      more.textContent='还有 '+(d.ev.length-shown.length)+' 句没列出来，点下面的按钮会一起交给 AI。';
+      box.appendChild(more);
+    }
+  }
+  var rec=store.strengths[rvRange];
+  if(rec&&rec.text){
+    $('st-ai-card').style.display='';
+    $('st-ai').textContent=rec.text;
+    if(rec.sig!==rvSig(list))$('st-status').textContent='日记有更新，可以再找一次。';
+  }else{
+    $('st-ai-card').style.display='none';
+  }
+}
+function stInstruction(){
+  return '帮一个人从她自己的日记里找优势。下面是本地从原话里摘出的证据清单，以及日记全文。\n\n'
+    +'严格按四段输出，用 ①②③④ 开头，不要小标题，不要开场白：\n'
+    +'① 最站得住的一到两个模式：必须引用「」里的原话、标出日期，说清它出现在几个不同日子、跨几周。\n'
+    +'② 反证和约束：哪些原话说明这个模式不成立，或者在什么条件下她会卡住。没有就写「没看到反证」，不要凑。\n'
+    +'③ 样本够不够：同一件事不到 3 个不同日子、或不到 2 周，就明确写「样本不够，只列线索，不下结论」。够了也要说明依据的是哪几句。\n'
+    +'④ 本周一个实验：具体到今天或这周就能做、而且能用日记验证结果的一件事，写清做完记什么。\n\n'
+    +'规则：\n'
+    +'- 只依据给出的原话，不脑补，不推断没写过的性格。\n'
+    +'- 不许贴标签，不许说「你很有创造力」「你很有潜力」这类空话，不许泛泛夸「你很努力」。\n'
+    +'- 不许写「继续保持」「相信你」「加油」，不灌鸡汤，不下诊断，不替她做决定。\n'
+    +'- 她写难堪的事，一个字都不许圆过去；发慌、写不出、耗电的句子要照原样算进去。\n'
+    +'- 不要出现这些词：首先、其次、总之、值得注意的是、不仅、而且、而是。\n'
+    +'- 三百到五百字，短句，不用 emoji。\n\n';
+}
+function stBody(list,d){
+  var full=rvBody(list),cut='';
+  if(full.length>12000){full=full.slice(0,12000);cut=String.fromCharCode(10)+'（全文过长已截断，建议改用「近 7 天 / 30 天」区间）'+String.fromCharCode(10);}
+  var themes=d.themes.map(function(t){
+    return '· '+t.name+'：'+t.dates.join('、')+'（'+t.days+' 个不同日子 / '+t.weeks+' 周）'
+      +(t.ready?'，够候选门槛':'，还只是线索');
+  });
+  var evs=d.ev.map(function(x){
+    return '【'+x.id+'】'+(x.energy==='down'?'[耗电或反证] ':'')+'「'+x.text+'」 → '+x.themes.join('、');
+  });
+  return '本地摘出来的证据（都是日记原话，不是判断）：\n'+themes.join('\n')
+    +'\n\n原话证据：\n'+evs.join('\n')
+    +'\n\n日记全文：\n'+full+cut;
+}
+$('btn-strength').onclick=async function(){
+  var list=inRange(rvRange);
+  if(!list.length){toast('这段时间还没有日记');return;}
+  var btn=this;btn.disabled=true;
+  $('st-status').textContent='正在从原话里找…';
+  try{
+    var txt=await chat(stInstruction()+stBody(list,strengthData(list)),{temperature:0.3});
+    store.strengths[rvRange]={text:txt,ts:Date.now(),sig:rvSig(list)};
+    persist();
+    $('st-ai-card').style.display='';
+    $('st-ai').textContent=txt;
+    $('st-status').textContent='';
+  }catch(e){
+    $('st-status').textContent=explain(e);
+  }finally{btn.disabled=false;}
+};
+$('btn-copy-strength').onclick=function(){
+  var rec=store.strengths[rvRange];
+  if(!rec||!rec.text){toast('还没有内容');return;}
+  copyStr(rec.text).then(function(){toast('已复制');},function(){toast('复制失败');});
+};
+$('btn-st-prompt').onclick=function(){
+  var list=inRange(rvRange);
+  if(!list.length){toast('这段时间还没有日记');return;}
+  var p='这是我'+(rvRange==='all'?'全部':rvRange+' 天')+'的日记，一共 '+list.length+' 篇。帮我从原话里找优势，别贴标签。\n\n'
+    +stInstruction()+stBody(list,strengthData(list));
+  copyStr(p).then(function(){toast('已复制，去粘给 WorkBuddy');},function(){toast('复制失败');});
+};
 
 $('btn-review').onclick=async function(){
   var list=inRange(rvRange);
